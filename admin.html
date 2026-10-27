@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Petugas · Info Rekonstitusi Obat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef3f5;
+    --surface: #ffffff;
+    --ink: #16303a;
+    --muted: #55707a;
+    --line: #c9d8dd;
+    --accent: #0e6e7e;
+    --accent-soft: #d9ecef;
+    --danger: #a32626;
+    --ok-bg: #e2f3e8;
+    --ok-ink: #1d5b34;
+    --err-bg: #fbe6e6;
+    --err-ink: #8c1f1f;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.55 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  header { background: var(--ink); color: #fff; padding: 16px 20px; }
+  .bar { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  .bar-actions { display: flex; align-items: center; gap: 16px; }
+  .bar a { color: #b9d3da; }
+
+  .btn {
+    padding: 10px 16px;
+    font: inherit;
+    font-weight: 500;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+  .btn.ghost { color: var(--ink); background: #fff; border-color: var(--line); }
+  .btn.danger { color: var(--danger); background: #fff; border-color: var(--danger); }
+  header .btn.ghost { padding: 6px 12px; }
+
+  .login {
+    width: 100%;
+    max-width: 380px;
+    margin: 48px auto;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .login h2 { margin: 0 0 4px; font-size: 1.3rem; }
+  .login p { margin: 0 0 16px; color: var(--muted); }
+
+  label { display: block; margin-bottom: 14px; font-weight: 500; }
+  .hint { display: block; font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+  input, textarea {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    font: inherit;
+    font-weight: 400;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  textarea { min-height: 150px; resize: vertical; }
+
+  .msg { margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; }
+  .msg.ok { background: var(--ok-bg); color: var(--ok-ink); }
+  .msg.err { background: var(--err-bg); color: var(--err-ink); }
+
+  .layout {
+    flex: 1;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .list-tools { display: grid; gap: 8px; margin-bottom: 8px; }
+  .status { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .list li + li { border-top: 1px solid var(--line); }
+  .item {
+    display: block;
+    width: 100%;
+    padding: 12px 16px 12px 13px;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+  }
+  .item:hover { background: var(--bg); }
+  .item[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+  .item-name { display: block; font-weight: 500; }
+  .item-sub { display: block; font-size: 0.875rem; color: var(--muted); }
+
+  .form-pane {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .form-pane h2 { margin: 0 0 16px; font-size: 1.4rem; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .actions .spacer { flex: 1; }
+  .back {
+    display: none;
+    margin: 0 0 14px;
+    padding: 6px 0;
+    font: inherit;
+    font-weight: 500;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  @media (max-width: 759px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; }
+    .layout.show-form .list-pane { display: none; }
+    .layout:not(.show-form) .form-pane { display: none; }
+    .back { display: inline-block; }
+    .row { grid-template-columns: 1fr; }
+    .form-pane { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <h1>Petugas · Info Rekonstitusi Obat</h1>
+    <div class="bar-actions">
+      <a href="index.html">Lihat halaman publik</a>
+      <button class="btn ghost" id="logout" type="button" hidden>Keluar</button>
+    </div>
+  </div>
+</header>
+
+<!-- Login -->
+<section class="login" id="loginView" hidden>
+  <h2>Masuk petugas</h2>
+  <p>Hanya akun petugas yang terdaftar yang bisa mengubah data.</p>
+  <p class="msg err" id="loginMsg" role="alert" hidden></p>
+  <form id="loginForm">
+    <label>Email
+      <input type="email" name="email" autocomplete="username" required>
+    </label>
+    <label>Kata sandi
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn" id="loginBtn" type="submit">Masuk</button>
+  </form>
+</section>
+
+<!-- Aplikasi petugas -->
+<main class="layout" id="appView" hidden>
+  <section class="list-pane" aria-label="Daftar obat">
+    <div class="list-tools">
+      <button class="btn" id="addBtn" type="button">Tambah obat</button>
+      <input id="search" type="search" placeholder="Cari nama obat" aria-label="Cari nama obat" autocomplete="off">
+    </div>
+    <p class="status" id="status" aria-live="polite">Memuat data…</p>
+    <ul class="list" id="list"></ul>
+  </section>
+
+  <section class="form-pane" aria-label="Formulir obat">
+    <button class="back" id="backBtn" type="button">Kembali ke daftar</button>
+    <h2 id="formTitle">Tambah obat</h2>
+    <p class="msg" id="formMsg" role="status" hidden></p>
+    <form id="form" novalidate>
+      <label>Nama obat
+        <input name="nama_obat" required>
+      </label>
+      <div class="row">
+        <label>Bentuk sediaan
+          <input name="bentuk_sediaan" placeholder="mis. vial serbuk injeksi 1 g">
+        </label>
+        <label>Pelarut
+          <input name="pelarut">
+        </label>
+      </div>
+      <div class="row">
+        <label>Volume pelarut
+          <input name="volume_pelarut" placeholder="mis. 10 mL">
+        </label>
+        <label>Konsentrasi akhir
+          <input name="konsentrasi_akhir">
+        </label>
+      </div>
+      <label>Cara rekonstitusi
+        <span class="hint">Tulis satu langkah per baris. Nomor langkah dibuat otomatis.</span>
+        <textarea name="cara_rekonstitusi" required></textarea>
+      </label>
+      <label>Stabilitas
+        <input name="stabilitas" placeholder="mis. stabil 24 jam pada suhu ruang">
+      </label>
+      <label>Sumber
+        <input name="sumber" placeholder="Nama brosur atau literatur rujukan">
+      </label>
+      <div class="actions">
+        <button class="btn" id="saveBtn" type="submit">Simpan</button>
+        <button class="btn ghost" id="resetBtn" type="button">Batal</button>
+        <span class="spacer"></span>
+        <button class="btn danger" id="deleteBtn" type="button" hidden>Hapus obat</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+  // ====== ISI DUA BARIS INI (sama dengan di index.html) ======
+  const SUPABASE_URL = "https://iyyuailarfxwuwiffsfq.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5eXVhaWxhcmZ4d3V3aWZmc2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNjk3ODYsImV4cCI6MjEwODY0NTc4Nn0.O4b9uUzjMFj0E4JoewrMd_0VYD7kkPZNPVCLbQLx6Gc";
+  // ===========================================================
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const $ = function (id) { return document.getElementById(id); };
+  const FIELDS = ["nama_obat", "bentuk_sediaan", "pelarut", "volume_pelarut", "konsentrasi_akhir", "cara_rekonstitusi", "stabilitas", "sumber"];
+
+  let rows = [];
+  let editId = null;
+  let requestCounter = 0;
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function showMsg(node, text, kind) {
+    node.textContent = text;
+    node.className = "msg " + kind;
+    node.hidden = false;
+  }
+
+  /* ---------- Login ---------- */
+
+  async function route(session) {
+    $("loginView").hidden = true;
+    $("appView").hidden = true;
+    $("logout").hidden = true;
+
+    if (!session) {
+      $("loginView").hidden = false;
+      return;
+    }
+    const { data: isAdmin, error } = await db.rpc("is_admin");
+    if (error || !isAdmin) {
+      await db.auth.signOut();
+      $("loginView").hidden = false;
+      showMsg($("loginMsg"), "Akun ini belum terdaftar sebagai petugas. Hubungi pengelola aplikasi.", "err");
+      return;
+    }
+    $("appView").hidden = false;
+    $("logout").hidden = false;
+    fillForm(null);
+    loadList($("search").value.trim());
+  }
+
+  $("loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    $("loginMsg").hidden = true;
+    $("loginBtn").disabled = true;
+    const { data, error } = await db.auth.signInWithPassword({
+      email: String(f.get("email")).trim(),
+      password: String(f.get("password"))
+    });
+    $("loginBtn").disabled = false;
+    if (error) {
+      showMsg($("loginMsg"), "Email atau kata sandi salah.", "err");
+      return;
+    }
+    e.target.reset();
+    route(data.session);
+  });
+
+  $("logout").addEventListener("click", async function () {
+    await db.auth.signOut();
+    rows = [];
+    route(null);
+  });
+
+  /* ---------- Daftar ---------- */
+
+  async function loadList(query) {
+    const myRequest = ++requestCounter;
+    let q = db.from("obat").select("*").order("nama_obat", { ascending: true }).limit(200);
+    if (query) q = q.ilike("nama_obat", "%" + query + "%");
+    const { data, error } = await q;
+    if (myRequest !== requestCounter) return;
+    if (error) {
+      $("status").textContent = "Data tidak dapat dimuat. Coba muat ulang halaman.";
+      return;
+    }
+    rows = data;
+    renderList();
+    $("status").textContent = rows.length ? rows.length + " obat" : (query ? "Obat tidak ditemukan." : "Belum ada data obat. Tambahkan yang pertama.");
+  }
+
+  function renderList() {
+    const listEl = $("list");
+    listEl.replaceChildren();
+    rows.forEach(function (r) {
+      const li = document.createElement("li");
+      const btn = el("button", "item");
+      btn.type = "button";
+      btn.append(el("span", "item-name", r.nama_obat));
+      if (r.bentuk_sediaan) btn.append(el("span", "item-sub", r.bentuk_sediaan));
+      if (r.id === editId) btn.setAttribute("aria-current", "true");
+      btn.addEventListener("click", function () {
+        fillForm(r);
+        $("appView").classList.add("show-form");
+        window.scrollTo(0, 0);
+      });
+      li.append(btn);
+      listEl.append(li);
+    });
+  }
+
+  let timer;
+  $("search").addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { loadList($("search").value.trim()); }, 250);
+  });
+
+  /* ---------- Formulir ---------- */
+
+  function fillForm(record) {
+    const form = $("form");
+    editId = record ? record.id : null;
+    FIELDS.forEach(function (name) {
+      form.elements[name].value = record && record[name] != null ? record[name] : "";
+    });
+    $("formTitle").textContent = record ? "Ubah obat" : "Tambah obat";
+    $("deleteBtn").hidden = !record;
+    $("formMsg").hidden = true;
+    renderList();
+  }
+
+  $("addBtn").addEventListener("click", function () {
+    fillForm(null);
+    $("appView").classList.add("show-form");
+    window.scrollTo(0, 0);
+  });
+  $("backBtn").addEventListener("click", function () { $("appView").classList.remove("show-form"); });
+  $("resetBtn").addEventListener("click", function () {
+    const record = rows.find(function (r) { return r.id === editId; });
+    fillForm(record || null);
+    $("appView").classList.remove("show-form");
+  });
+
+  $("form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const payload = {};
+    FIELDS.forEach(function (name) {
+      const v = form.elements[name].value.trim();
+      payload[name] = v === "" ? null : v;
+    });
+    if (!payload.nama_obat) { showMsg($("formMsg"), "Nama obat wajib diisi.", "err"); return; }
+    if (!payload.cara_rekonstitusi) { showMsg($("formMsg"), "Cara rekonstitusi wajib diisi.", "err"); return; }
+
+    $("saveBtn").disabled = true;
+    const query = editId
+      ? db.from("obat").update(payload).eq("id", editId).select().single()
+      : db.from("obat").insert(payload).select().single();
+    const { data, error } = await query;
+    $("saveBtn").disabled = false;
+
+    if (error) {
+      showMsg($("formMsg"), "Data belum tersimpan. Pastikan Anda masih login sebagai petugas, lalu coba lagi.", "err");
+      return;
+    }
+    await loadList($("search").value.trim());
+    fillForm(data);
+    showMsg($("formMsg"), "Tersimpan.", "ok");
+  });
+
+  $("deleteBtn").addEventListener("click", async function () {
+    const record = rows.find(function (r) { return r.id === editId; });
+    if (!record) return;
+    if (!confirm("Hapus “" + record.nama_obat + "”? Tindakan ini tidak dapat dibatalkan.")) return;
+    const { error } = await db.from("obat").delete().eq("id", editId);
+    if (error) {
+      showMsg($("formMsg"), "Data belum terhapus. Coba lagi.", "err");
+      return;
+    }
+    await loadList($("search").value.trim());
+    fillForm(null);
+    $("appView").classList.remove("show-form");
+  });
+
+  /* ---------- Mulai ---------- */
+  db.auth.getSession().then(function (res) { route(res.data.session); });
+</script>
+</body>
+</html>

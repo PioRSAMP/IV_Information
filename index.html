@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Info Rekonstitusi Obat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef3f5;
+    --surface: #ffffff;
+    --ink: #16303a;
+    --muted: #55707a;
+    --line: #c9d8dd;
+    --accent: #0e6e7e;
+    --accent-soft: #d9ecef;
+    --note-bg: #fff4db;
+    --note-ink: #6b4500;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.55 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  header { background: var(--ink); color: #fff; padding: 22px 20px 26px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+  header p { margin: 0 0 16px; color: #b9d3da; max-width: 60ch; }
+  .search {
+    width: 100%;
+    padding: 14px 16px;
+    font: inherit;
+    font-size: 1.05rem;
+    color: var(--ink);
+    background: #fff;
+    border: 0;
+    border-radius: 8px;
+  }
+  .search::placeholder { color: #7b929a; }
+
+  .layout {
+    flex: 1;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .status { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .list li + li { border-top: 1px solid var(--line); }
+  .item {
+    display: block;
+    width: 100%;
+    padding: 12px 16px 12px 13px;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+  }
+  .item:hover { background: var(--bg); }
+  .item[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+  .item-name { display: block; font-weight: 500; }
+  .item-sub { display: block; font-size: 0.875rem; color: var(--muted); }
+
+  .detail {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .detail h2 { margin: 0 0 16px; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.01em; }
+  .detail h3 { margin: 24px 0 8px; font-size: 1.05rem; }
+  .empty { color: var(--muted); margin: 0; }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .facts dt { font-size: 0.85rem; color: var(--muted); }
+  .facts dd { margin: 0; font-weight: 500; }
+
+  .steps { margin: 0; padding-left: 1.4rem; max-width: 70ch; }
+  .steps li { padding-left: 0.3rem; margin-bottom: 8px; }
+  .steps li::marker { color: var(--accent); font-weight: 600; }
+  .text { margin: 0; max-width: 70ch; }
+  .meta { margin: 24px 0 0; font-size: 0.875rem; color: var(--muted); }
+
+  .back {
+    display: none;
+    margin: 0 0 14px;
+    padding: 6px 0;
+    font: inherit;
+    font-weight: 500;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  footer { padding: 16px 20px 24px; }
+  .note {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: var(--note-ink);
+    background: var(--note-bg);
+    border-radius: 8px;
+  }
+
+  .staff { max-width: 1040px; margin: 12px auto 0; font-size: 0.875rem; }
+  .staff a { color: var(--muted); }
+
+  @media (max-width: 759px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; }
+    .layout.show-detail .list-pane { display: none; }
+    .layout:not(.show-detail) .detail { display: none; }
+    .back { display: inline-block; }
+    .detail { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Info Rekonstitusi Obat</h1>
+    <p>Cari nama obat untuk melihat cara rekonstitusinya.</p>
+    <input id="search" class="search" type="search" placeholder="Ketik nama obat" autocomplete="off" aria-label="Cari nama obat">
+  </div>
+</header>
+
+<main class="layout" id="layout">
+  <section class="list-pane" aria-label="Daftar obat">
+    <p class="status" id="status" aria-live="polite">Memuat data…</p>
+    <ul class="list" id="list"></ul>
+  </section>
+  <article class="detail" id="detail" aria-live="polite">
+    <p class="empty">Pilih obat dari daftar untuk melihat cara rekonstitusinya.</p>
+  </article>
+</main>
+
+<footer>
+  <p class="note">Informasi ini bersifat pendukung dan tidak menggantikan brosur produk atau penilaian tenaga kesehatan. Selalu verifikasi dengan brosur resmi sebelum menyiapkan obat.</p>
+  <p class="staff"><a href="admin.html">Masuk petugas</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+  // ====== ISI DUA BARIS INI (Supabase: Project Settings -> API) ======
+  const SUPABASE_URL = "https://iyyuailarfxwuwiffsfq.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5eXVhaWxhcmZ4d3V3aWZmc2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNjk3ODYsImV4cCI6MjEwODY0NTc4Nn0.O4b9uUzjMFj0E4JoewrMd_0VYD7kkPZNPVCLbQLx6Gc";
+  // Gunakan hanya anon/public key. Jangan pernah menaruh service_role key di sini.
+  // ===================================================================
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const layoutEl = document.getElementById("layout");
+  const listEl = document.getElementById("list");
+  const detailEl = document.getElementById("detail");
+  const statusEl = document.getElementById("status");
+  const searchEl = document.getElementById("search");
+
+  let rows = [];
+  let selectedId = null;
+  let requestCounter = 0;
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  async function loadList(query) {
+    const myRequest = ++requestCounter;
+    let q = db.from("obat").select("*").order("nama_obat", { ascending: true }).limit(100);
+    if (query) q = q.ilike("nama_obat", "%" + query + "%");
+    const { data, error } = await q;
+    if (myRequest !== requestCounter) return; // abaikan hasil lama
+
+    if (error) {
+      rows = [];
+      renderList();
+      statusEl.textContent = "Data tidak dapat dimuat. Periksa koneksi internet dan pengaturan Supabase.";
+      return;
+    }
+    rows = data;
+    renderList();
+    if (rows.length === 0) {
+      statusEl.textContent = query ? "Obat “" + query + "” tidak ditemukan. Coba ejaan lain." : "Belum ada data obat.";
+    } else {
+      statusEl.textContent = rows.length + " obat" + (query ? " ditemukan" : "");
+    }
+  }
+
+  function renderList() {
+    listEl.replaceChildren();
+    rows.forEach(function (r) {
+      const li = document.createElement("li");
+      const btn = el("button", "item");
+      btn.type = "button";
+      btn.append(el("span", "item-name", r.nama_obat));
+      if (r.bentuk_sediaan) btn.append(el("span", "item-sub", r.bentuk_sediaan));
+      if (r.id === selectedId) btn.setAttribute("aria-current", "true");
+      btn.addEventListener("click", function () { location.hash = String(r.id); });
+      li.append(btn);
+      listEl.append(li);
+    });
+  }
+
+  function renderDetail(r) {
+    detailEl.replaceChildren();
+
+    const back = el("button", "back", "Kembali ke daftar");
+    back.type = "button";
+    back.addEventListener("click", function () { location.hash = ""; });
+    detailEl.append(back, el("h2", null, r.nama_obat));
+
+    const facts = [
+      ["Bentuk sediaan", r.bentuk_sediaan],
+      ["Pelarut", r.pelarut],
+      ["Volume pelarut", r.volume_pelarut],
+      ["Konsentrasi akhir", r.konsentrasi_akhir]
+    ].filter(function (f) { return f[1]; });
+
+    if (facts.length) {
+      const dl = el("dl", "facts");
+      facts.forEach(function (f) {
+        const box = document.createElement("div");
+        box.append(el("dt", null, f[0]), el("dd", null, f[1]));
+        dl.append(box);
+      });
+      detailEl.append(dl);
+    }
+
+    const steps = String(r.cara_rekonstitusi || "")
+      .split(/\r?\n/)
+      .map(function (s) { return s.trim().replace(/^\d+[.)]\s*/, ""); })
+      .filter(Boolean);
+    if (steps.length) {
+      detailEl.append(el("h3", null, "Cara rekonstitusi"));
+      const ol = el("ol", "steps");
+      steps.forEach(function (s) { ol.append(el("li", null, s)); });
+      detailEl.append(ol);
+    }
+
+    if (r.stabilitas) {
+      detailEl.append(el("h3", null, "Stabilitas"), el("p", "text", r.stabilitas));
+    }
+
+    const meta = [];
+    if (r.sumber) meta.push("Sumber: " + r.sumber);
+    if (r.updated_at) {
+      meta.push("Diperbarui: " + new Date(r.updated_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }));
+    }
+    if (meta.length) detailEl.append(el("p", "meta", meta.join(". ")));
+  }
+
+  async function showFromHash() {
+    const id = Number(location.hash.slice(1));
+    if (!id) {
+      selectedId = null;
+      layoutEl.classList.remove("show-detail");
+      detailEl.replaceChildren(el("p", "empty", "Pilih obat dari daftar untuk melihat cara rekonstitusinya."));
+      renderList();
+      return;
+    }
+    let record = rows.find(function (r) { return r.id === id; });
+    if (!record) {
+      const { data } = await db.from("obat").select("*").eq("id", id).maybeSingle();
+      record = data;
+    }
+    if (!record) {
+      selectedId = null;
+      layoutEl.classList.remove("show-detail");
+      detailEl.replaceChildren(el("p", "empty", "Data obat tidak ditemukan."));
+      return;
+    }
+    selectedId = record.id;
+    layoutEl.classList.add("show-detail");
+    renderDetail(record);
+    renderList();
+    window.scrollTo(0, 0);
+  }
+
+  let timer;
+  searchEl.addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { loadList(searchEl.value.trim()); }, 250);
+  });
+  window.addEventListener("hashchange", showFromHash);
+
+  loadList("").then(showFromHash);
+</script>
+</body>
+</html>
