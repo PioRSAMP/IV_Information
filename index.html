@@ -111,6 +111,16 @@
   footer { padding: 0 40px 28px; }
   .note { max-width: 860px; margin: 0; padding: 12px 16px; font-size: .85rem; color: var(--note-ink); background: var(--note-bg); border: 1px solid rgba(122,82,0,.2); border-radius: 12px; }
 
+  .calc { max-width: 64ch; padding: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(20,48,59,.06); }
+  .calc label { display: block; font-weight: 600; font-size: .9rem; }
+  .calc input { display: block; width: 100%; margin-top: 6px; padding: 12px 14px; font: inherit; font-size: 1.1rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
+  .calc input:focus { background: #fff; border-color: var(--aqua); box-shadow: 0 0 0 3px rgba(8,112,127,.15); outline: none; }
+  .calc-conc { margin: 10px 0 0; color: var(--muted); font-size: .85rem; }
+  .result { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 84px; margin-top: 14px; padding: 14px 16px; background: #e3f3f5; border-radius: 12px; }
+  .result strong { font-size: 2rem; line-height: 1.15; letter-spacing: -0.02em; color: var(--aqua); }
+  .calc-hint { color: var(--muted); font-size: .85rem; }
+  .calc-note { margin: 12px 0 0; color: var(--muted); font-size: .8rem; }
+
   .scrim { display: none; }
   @media (max-width: 859px) {
     .app { grid-template-columns: 1fr; }
@@ -256,6 +266,7 @@
       steps.forEach(function (s) { ol.append(el("li", null, s)); });
       d.append(ol);
     }
+    if (Number(r.konsentrasi_per_ml) > 0) renderCalc(d, r);
     if (r.stabilitas) {
       d.append(el("h2", "sec", "Stabilitas"), el("div", "box", r.stabilitas));
     }
@@ -263,6 +274,45 @@
     if (r.sumber) meta.push("Sumber: " + r.sumber);
     if (r.updated_at) meta.push("Diperbarui: " + new Date(r.updated_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }));
     if (meta.length) d.append(el("p", "meta", meta.join(". ")));
+  }
+
+  function fmt(n, max) { return n.toLocaleString("id-ID", { maximumFractionDigits: max }); }
+
+  function renderCalc(d, r) {
+    const unit = r.satuan_dosis || "mg";
+    const conc = Number(r.konsentrasi_per_ml);
+    d.append(el("h2", "sec", "Kalkulator volume"));
+    const box = el("div", "calc");
+    const label = el("label", null, "Dosis (" + unit + ")");
+    const input = el("input");
+    input.type = "text";
+    input.inputMode = "decimal";
+    input.autocomplete = "off";
+    input.placeholder = "mis. 250";
+    label.append(input);
+    const out = el("div", "result");
+    out.setAttribute("role", "status");
+    box.append(label, el("p", "calc-conc", "Konsentrasi: " + fmt(conc, 4) + " " + unit + "/mL"), out,
+      el("p", "calc-note", "Memakai konsentrasi hasil rekonstitusi sesuai langkah di atas. Periksa kembali hasil hitungan sebelum menyiapkan obat."));
+
+    function update() {
+      const raw = input.value.trim().replace(",", ".");
+      out.replaceChildren();
+      if (!raw) { out.append(el("span", "calc-hint", "Isi dosis untuk melihat volume yang diambil.")); return; }
+      if (!/^(\d+\.?\d*|\.\d+)$/.test(raw) || Number(raw) <= 0) {
+        out.append(el("span", "calc-hint", "Masukkan angka dosis lebih dari 0."));
+        return;
+      }
+      const dose = Number(raw);
+      const vol = dose / conc;
+      const v = fmt(vol, vol < 1 ? 3 : 2);
+      out.append(el("span", "calc-hint", "Volume yang diambil"),
+        el("strong", null, v + " mL"),
+        el("span", "calc-hint", fmt(dose, 4) + " " + unit + " ÷ " + fmt(conc, 4) + " " + unit + "/mL = " + v + " mL"));
+    }
+    input.addEventListener("input", update);
+    update();
+    d.append(box);
   }
 
   function showFromHash() {
