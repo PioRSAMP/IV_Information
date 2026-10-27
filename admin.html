@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Petugas · Info Rekonstitusi Obat</title>
+<title>Petugas · Pelayanan Informasi Obat RSUD Aji Muhammad Parikesit</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -39,6 +40,9 @@
   header { background: var(--ink); color: #fff; padding: 16px 20px; }
   .bar { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  .brand-row { display: flex; align-items: center; gap: 14px; }
+  .chip { display: flex; padding: 4px 10px; background: #fff; border-radius: 8px; }
+  .chip img { display: block; height: 36px; width: auto; }
   .bar-actions { display: flex; align-items: center; gap: 16px; }
   .bar a { color: #b9d3da; }
 
@@ -165,7 +169,10 @@
 
 <header>
   <div class="bar">
-    <h1>Petugas · Info Rekonstitusi Obat</h1>
+    <div class="brand-row">
+      <span class="chip"><img src="logo.png" alt="Logo RSUD Aji Muhammad Parikesit" width="804" height="240"></span>
+      <h1>Petugas Pelayanan Informasi Obat</h1>
+    </div>
     <div class="bar-actions">
       <a href="index.html">Lihat halaman publik</a>
       <button class="btn ghost" id="logout" type="button" hidden>Keluar</button>
