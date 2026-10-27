@@ -224,6 +224,16 @@
           <input name="konsentrasi_akhir">
         </label>
       </div>
+      <div class="row">
+        <label>Konsentrasi per mL (untuk kalkulator)
+          <span class="hint">Angka saja, mis. 100. Kosongkan jika kalkulator tidak dipakai.</span>
+          <input name="konsentrasi_per_ml" inputmode="decimal">
+        </label>
+        <label>Satuan dosis
+          <span class="hint">mis. mg, mcg, unit. Kosong = mg.</span>
+          <input name="satuan_dosis" placeholder="mg">
+        </label>
+      </div>
       <label>Cara rekonstitusi
         <span class="hint">Tulis satu langkah per baris. Nomor langkah dibuat otomatis.</span>
         <textarea name="cara_rekonstitusi" required></textarea>
@@ -254,7 +264,7 @@
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const $ = function (id) { return document.getElementById(id); };
-  const FIELDS = ["nama_obat", "bentuk_sediaan", "pelarut", "volume_pelarut", "konsentrasi_akhir", "cara_rekonstitusi", "stabilitas", "sumber"];
+  const FIELDS = ["nama_obat", "bentuk_sediaan", "pelarut", "volume_pelarut", "konsentrasi_akhir", "konsentrasi_per_ml", "satuan_dosis", "cara_rekonstitusi", "stabilitas", "sumber"];
 
   let rows = [];
   let editId = null;
@@ -400,6 +410,12 @@
     });
     if (!payload.nama_obat) { showMsg($("formMsg"), "Nama obat wajib diisi.", "err"); return; }
     if (!payload.cara_rekonstitusi) { showMsg($("formMsg"), "Cara rekonstitusi wajib diisi.", "err"); return; }
+    if (payload.konsentrasi_per_ml !== null) {
+      const n = Number(String(payload.konsentrasi_per_ml).replace(",", "."));
+      if (!isFinite(n) || n <= 0) { showMsg($("formMsg"), "Konsentrasi per mL harus berupa angka lebih dari 0.", "err"); return; }
+      payload.konsentrasi_per_ml = n;
+    }
+    payload.satuan_dosis = payload.satuan_dosis || "mg";
 
     $("saveBtn").disabled = true;
     const query = editId
