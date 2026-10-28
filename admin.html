@@ -155,6 +155,15 @@
     cursor: pointer;
   }
 
+  .badge { display: inline-block; margin-top: 4px; padding: 1px 9px; font-size: .75rem; font-weight: 600; color: #7a5200; background: #fff3d6; border-radius: 999px; }
+  .badge.ok { color: #1d5b34; background: #e2f3e8; }
+  .verif { margin: 0 0 16px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .verif p { margin: 0 0 8px; }
+  select { padding: 10px 12px; font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+  dialog { width: min(380px, 92vw); padding: 22px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
+  dialog::backdrop { background: rgba(20,48,59,.45); }
+  dialog h2 { margin: 0 0 12px; font-size: 1.2rem; }
+
   @media (max-width: 759px) {
     .layout { grid-template-columns: 1fr; padding: 16px; }
     .layout.show-form .list-pane { display: none; }
@@ -175,6 +184,7 @@
     </div>
     <div class="bar-actions">
       <a href="index.html">Lihat halaman publik</a>
+      <button class="btn ghost" id="pinBtn" type="button" hidden>Ganti PIN</button>
       <button class="btn ghost" id="logout" type="button" hidden>Keluar</button>
     </div>
   </div>
@@ -201,6 +211,11 @@
   <section class="list-pane" aria-label="Daftar obat">
     <div class="list-tools">
       <button class="btn" id="addBtn" type="button">Tambah obat</button>
+      <select id="statusFilter" aria-label="Filter status">
+        <option value="">Semua status</option>
+        <option value="draf">Hanya draf</option>
+        <option value="terverifikasi">Hanya terverifikasi</option>
+      </select>
       <input id="search" type="search" placeholder="Cari nama obat" aria-label="Cari nama obat" autocomplete="off">
     </div>
     <p class="status" id="status" aria-live="polite">Memuat data…</p>
@@ -211,6 +226,11 @@
     <button class="back" id="backBtn" type="button">Kembali ke daftar</button>
     <h2 id="formTitle">Tambah obat</h2>
     <p class="msg" id="formMsg" role="status" hidden></p>
+    <div class="verif" id="verif" hidden>
+      <p id="verifText"></p>
+      <button class="btn" id="verifBtn" type="button">Verifikasi</button>
+      <button class="btn danger" id="unverifBtn" type="button" hidden>Cabut verifikasi</button>
+    </div>
     <form id="form" novalidate>
       <label>Nama obat
         <input name="nama_obat" required>
@@ -261,6 +281,27 @@
   </section>
 </main>
 
+<dialog id="pinDialog">
+  <form id="pinForm" novalidate>
+    <h2 id="pinTitle">Verifikasi obat</h2>
+    <p class="msg err" id="pinMsg" role="alert" hidden></p>
+    <label id="namaWrap">Nama verifikator
+      <input id="pinNama" autocomplete="off">
+    </label>
+    <label><span id="pinLabel">PIN verifikasi</span>
+      <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
+    </label>
+    <label id="pinBaruWrap">PIN baru
+      <span class="hint">6 sampai 12 angka</span>
+      <input id="pinBaru" type="password" inputmode="numeric" autocomplete="off">
+    </label>
+    <div class="actions">
+      <button class="btn" id="pinOk" type="submit">Lanjut</button>
+      <button class="btn ghost" id="pinCancel" type="button">Batal</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
   // ====== ISI DUA BARIS INI (sama dengan di index.html) ======
@@ -296,6 +337,7 @@
     $("loginView").hidden = true;
     $("appView").hidden = true;
     $("logout").hidden = true;
+    $("pinBtn").hidden = true;
 
     if (!session) {
       $("loginView").hidden = false;
@@ -310,6 +352,7 @@
     }
     $("appView").hidden = false;
     $("logout").hidden = false;
+    $("pinBtn").hidden = false;
     fillForm(null);
     loadList($("search").value.trim());
   }
@@ -344,6 +387,8 @@
     const myRequest = ++requestCounter;
     let q = db.from("obat").select("*").order("nama_obat", { ascending: true }).limit(200);
     if (query) q = q.ilike("nama_obat", "%" + query + "%");
+    const sf = $("statusFilter").value;
+    if (sf) q = q.eq("status", sf);
     const { data, error } = await q;
     if (myRequest !== requestCounter) return;
     if (error) {
@@ -364,6 +409,7 @@
       btn.type = "button";
       btn.append(el("span", "item-name", r.nama_obat));
       if (r.bentuk_sediaan) btn.append(el("span", "item-sub", r.bentuk_sediaan));
+      btn.append(el("span", "badge" + (r.status === "terverifikasi" ? " ok" : ""), r.status === "terverifikasi" ? "Terverifikasi" : "Draf"));
       if (r.id === editId) btn.setAttribute("aria-current", "true");
       btn.addEventListener("click", function () {
         fillForm(r);
@@ -375,6 +421,7 @@
     });
   }
 
+  $("statusFilter").addEventListener("change", function () { loadList($("search").value.trim()); });
   let timer;
   $("search").addEventListener("input", function () {
     clearTimeout(timer);
@@ -392,6 +439,8 @@
     $("formTitle").textContent = record ? "Ubah obat" : "Tambah obat";
     $("deleteBtn").hidden = !record;
     $("formMsg").hidden = true;
+    dirty = false;
+    renderVerif(record);
     renderList();
   }
 
@@ -424,6 +473,9 @@
     }
     payload.satuan_dosis = payload.satuan_dosis || "mg";
 
+    const wasNew = !editId;
+    const prev = rows.find(function (r) { return r.id === editId; });
+    const wasVerified = !!prev && prev.status === "terverifikasi";
     $("saveBtn").disabled = true;
     const query = editId
       ? db.from("obat").update(payload).eq("id", editId).select().single()
@@ -437,7 +489,7 @@
     }
     await loadList($("search").value.trim());
     fillForm(data);
-    showMsg($("formMsg"), "Tersimpan.", "ok");
+    showMsg($("formMsg"), wasNew ? "Tersimpan sebagai draf. Verifikasi agar tampil di halaman publik." : (wasVerified && data.status === "draf" ? "Tersimpan. Isi berubah, jadi status kembali ke draf dan perlu diverifikasi ulang." : "Tersimpan."), "ok");
   });
 
   $("deleteBtn").addEventListener("click", async function () {
@@ -452,6 +504,77 @@
     await loadList($("search").value.trim());
     fillForm(null);
     $("appView").classList.remove("show-form");
+  });
+
+  /* ---------- Verifikasi ---------- */
+  let dirty = false;
+  let pinMode = null;
+  const PIN_PESAN = {
+    salah: "PIN salah.",
+    terkunci: "PIN terkunci sementara karena terlalu banyak percobaan salah. Coba lagi 15 menit lagi.",
+    belum_diatur: "PIN belum diatur di database. Jalankan supabase-verifikasi.sql.",
+    nama_kosong: "Nama verifikator wajib diisi.",
+    pin_baru_tidak_valid: "PIN baru harus 6 sampai 12 angka.",
+    tidak_ditemukan: "Data obat tidak ditemukan."
+  };
+  function fmtDate(v) { return new Date(v).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }); }
+
+  function renderVerif(rec) {
+    const box = $("verif");
+    if (!rec) { box.hidden = true; return; }
+    box.hidden = false;
+    const ok = rec.status === "terverifikasi";
+    let text = ok
+      ? "Terverifikasi oleh " + rec.diverifikasi_oleh + " pada " + fmtDate(rec.diverifikasi_pada) + ". Tampil di halaman publik."
+      : "Draf. Belum tampil di halaman publik.";
+    if (dirty) text += " Simpan perubahan dulu sebelum verifikasi.";
+    $("verifText").textContent = text;
+    $("verifBtn").hidden = ok;
+    $("unverifBtn").hidden = !ok;
+    $("verifBtn").disabled = dirty;
+    $("unverifBtn").disabled = dirty;
+  }
+
+  function openPin(mode) {
+    pinMode = mode;
+    $("pinTitle").textContent = mode === "verifikasi" ? "Verifikasi obat" : mode === "cabut" ? "Cabut verifikasi" : "Ganti PIN";
+    $("namaWrap").hidden = mode !== "verifikasi";
+    $("pinBaruWrap").hidden = mode !== "ganti";
+    $("pinLabel").textContent = mode === "ganti" ? "PIN lama" : "PIN verifikasi";
+    ["pinNama", "pinInput", "pinBaru"].forEach(function (id) { $(id).value = ""; });
+    $("pinMsg").hidden = true;
+    $("pinDialog").showModal();
+    (mode === "verifikasi" ? $("pinNama") : $("pinInput")).focus();
+  }
+
+  $("verifBtn").addEventListener("click", function () { openPin("verifikasi"); });
+  $("unverifBtn").addEventListener("click", function () { openPin("cabut"); });
+  $("pinBtn").addEventListener("click", function () { openPin("ganti"); });
+  $("pinCancel").addEventListener("click", function () { $("pinDialog").close(); });
+  $("form").addEventListener("input", function () {
+    dirty = true;
+    renderVerif(rows.find(function (r) { return r.id === editId; }) || null);
+  });
+
+  $("pinForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const pin = $("pinInput").value.trim();
+    if (!pin) { showMsg($("pinMsg"), "PIN wajib diisi.", "err"); return; }
+    $("pinOk").disabled = true;
+    let res;
+    if (pinMode === "verifikasi") res = await db.rpc("verifikasi_obat", { p_id: editId, p_pin: pin, p_nama: $("pinNama").value.trim() });
+    else if (pinMode === "cabut") res = await db.rpc("cabut_verifikasi", { p_id: editId, p_pin: pin });
+    else res = await db.rpc("ganti_pin", { p_lama: pin, p_baru: $("pinBaru").value.trim() });
+    $("pinOk").disabled = false;
+    if (res.error) { showMsg($("pinMsg"), "Terjadi kesalahan. Pastikan Anda masih login, lalu coba lagi.", "err"); return; }
+    if (res.data !== "ok") { showMsg($("pinMsg"), PIN_PESAN[res.data] || "Gagal diproses.", "err"); return; }
+    $("pinDialog").close();
+    if (pinMode === "ganti") { alert("PIN berhasil diganti."); return; }
+    const id = editId;
+    const { data: rec } = await db.from("obat").select("*").eq("id", id).single();
+    await loadList($("search").value.trim());
+    fillForm(rec || null);
+    showMsg($("formMsg"), pinMode === "verifikasi" ? "Obat terverifikasi dan sekarang tampil di halaman publik." : "Verifikasi dicabut. Obat tidak lagi tampil di halaman publik.", "ok");
   });
 
   /* ---------- Mulai ---------- */
