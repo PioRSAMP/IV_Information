@@ -203,7 +203,7 @@
   }
 
   async function load() {
-    const { data, error } = await db.from("obat").select("*").order("nama_obat", { ascending: true }).limit(1000);
+    const { data, error } = await db.from("obat").select("*").eq("status", "terverifikasi").order("nama_obat", { ascending: true }).limit(1000);
     if (error) { $("status").textContent = "Data tidak dapat dimuat. Periksa koneksi internet."; showEmpty(); return; }
     all = data;
     renderNav();
@@ -316,6 +316,9 @@
     }
     const meta = [];
     if (r.sumber) meta.push("Sumber: " + r.sumber);
+    if (r.diverifikasi_oleh && r.diverifikasi_pada) {
+      meta.push("Diverifikasi oleh " + r.diverifikasi_oleh + " pada " + new Date(r.diverifikasi_pada).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }));
+    }
     if (r.updated_at) meta.push("Diperbarui: " + new Date(r.updated_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }));
     if (meta.length) d.append(el("p", "meta", meta.join(". ")));
   }
