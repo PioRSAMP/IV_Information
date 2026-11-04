@@ -43,7 +43,7 @@
   .brand-row { display: flex; align-items: center; gap: 14px; }
   .chip { display: flex; padding: 4px 10px; background: #fff; border-radius: 8px; }
   .chip img { display: block; height: 36px; width: auto; }
-  .bar-actions { display: flex; align-items: center; gap: 16px; }
+  .bar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
   .bar a { color: #b9d3da; }
 
   .btn {
@@ -140,7 +140,8 @@
     padding: 24px;
   }
   .form-pane h2 { margin: 0 0 16px; font-size: 1.4rem; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .layout > * { min-width: 0; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
   .actions .spacer { flex: 1; }
   .back {
@@ -180,14 +181,14 @@
   #statTable { width: 100%; border-collapse: collapse; font-size: .9rem; }
   #statTable th, #statTable td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
   #statTable th:first-child, #statTable td:first-child { text-align: left; }
-  .bar { display: block; height: 4px; margin-top: 3px; background: var(--accent); border-radius: 2px; }
+  .sbar { display: block; height: 4px; margin-top: 3px; background: var(--accent); border-radius: 2px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .two-col ol { margin: 0; padding-left: 1.2rem; }
   @media (max-width: 759px) { .two-col { grid-template-columns: 1fr; } }
   #infusSec { margin-top: 24px; padding-top: 8px; border-top: 1px solid var(--line); }
   .sub-h { margin: 16px 0 4px; font-size: 1.15rem; }
   .infus-card { margin: 12px 0; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 12px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; }
   @media (max-width: 759px) { .grid3 { grid-template-columns: 1fr; } }
 
   @media (max-width: 759px) {
@@ -855,7 +856,7 @@
       const tr = document.createElement("tr");
       tr.append(el("td", null, r.periode));
       const k = el("td", null, nf(r.kunjungan));
-      const bar = el("span", "bar");
+      const bar = el("span", "sbar");
       bar.style.width = Math.round(Number(r.kunjungan) / max * 100) + "%";
       k.append(bar);
       tr.append(k);
