@@ -200,6 +200,26 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5eXVhaWxhcmZ4d3V3aWZmc2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNjk3ODYsImV4cCI6MjEwODY0NTc4Nn0.O4b9uUzjMFj0E4JoewrMd_0VYD7kkPZNPVCLbQLx6Gc";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Pencatatan statistik: hanya jenis kejadian, obat yang dibuka, dan kode acak browser.
+  const ready = db.auth.getSession().then(function (res) { return !!(res.data && res.data.session); }, function () { return false; });
+  const pid = (function () {
+    try {
+      let v = localStorage.getItem("pid");
+      if (!v) {
+        v = Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        localStorage.setItem("pid", v);
+      }
+      return v;
+    } catch (e) { return Math.random().toString(16).slice(2).padEnd(16, "0"); }
+  })();
+  function catat(jenis, obatId, kata) {
+    ready.then(function (isStaff) {
+      if (isStaff) return;
+      return db.from("log_kunjungan").insert({ jenis: jenis, obat_id: obatId || null, kata: kata || null, pengunjung: pid });
+    }).catch(function () {});
+  }
+  let tKosong = null;
+
   const $ = function (id) { return document.getElementById(id); };
   let all = [];
   let selectedId = null;
@@ -227,6 +247,8 @@
     const nav = $("nav");
     nav.replaceChildren();
     $("status").textContent = list.length ? list.length + " obat" + (q ? " ditemukan" : "") : (q ? "Obat tidak ditemukan. Coba ejaan lain." : "Belum ada data obat.");
+    clearTimeout(tKosong);
+    if (q && !list.length) { tKosong = setTimeout(function () { catat("cari_kosong", null, q.slice(0, 60)); }, 1200); }
     let letter = "", ul = null;
     list.forEach(function (r) {
       const first = r.nama_obat.trim().charAt(0).toUpperCase() || "#";
@@ -354,6 +376,7 @@
     box.append(label, el("p", "calc-conc", "Konsentrasi: " + fmt(conc, 4) + " " + unit + "/mL"), out,
       el("p", "calc-note", "Memakai konsentrasi hasil rekonstitusi sesuai langkah di atas. Periksa kembali hasil hitungan sebelum menyiapkan obat."));
 
+    let logVol = false;
     function update() {
       const raw = input.value.trim().replace(",", ".");
       out.replaceChildren();
@@ -365,6 +388,7 @@
       const dose = Number(raw);
       const vol = dose / conc;
       const v = fmt(vol, vol < 1 ? 3 : 2);
+      if (!logVol) { logVol = true; catat("kalkulator_volume", r.id); }
       out.append(el("span", "calc-hint", "Volume yang diambil"),
         el("strong", null, v + " mL"),
         el("span", "calc-hint", fmt(dose, 4) + " " + unit + " ÷ " + fmt(conc, 4) + " " + unit + "/mL = " + v + " mL"));
@@ -397,6 +421,7 @@
     wrap.append(tabs, card);
     d.append(wrap);
     let active = 0;
+    let logSp = false;
     const keep = { vo: list[0].volume_obat_awal, tv: list[0].total_volume_awal, dose: "", bb: "" };
 
     function build() {
@@ -475,6 +500,7 @@
         const perHour = x.v * w * (t.per_waktu === "menit" ? 60 : 1);
         const conv = perHour * FACT[uR] / FACT[unitS];
         const rate = conv / conc;
+        if (!logSp) { logSp = true; catat("kalkulator_sp", r.id); }
         out.append(el("span", "calc-hint", "Kecepatan pompa"), el("strong", null, fmt(rate, 2) + " mL/jam"));
         out.append(
           el("span", "calc-hint", fmt(x.v, 4) + " " + tplLabel(t) + (bb ? " × " + fmt(w, 2) + " kg" : "") + (t.per_waktu === "menit" ? " × 60" : "") + " = " + fmt(perHour, 6) + " " + uR + "/jam"),
@@ -500,7 +526,7 @@
     const rec = id && all.find(function (r) { return r.id === id; });
     selectedId = rec ? rec.id : null;
     $("app").classList.toggle("has-detail", !!rec);
-    if (rec) { renderDetail(rec); window.scrollTo(0, 0); }
+    if (rec) { renderDetail(rec); window.scrollTo(0, 0); catat("buka_obat", rec.id); }
     else showEmpty(id ? "Data obat tidak ditemukan." : null);
     renderNav();
   }
@@ -515,6 +541,7 @@
 
   showEmpty();
   load();
+  catat("kunjungan");
 </script>
 </body>
 </html>
