@@ -298,16 +298,16 @@
     </form>
 
     <section id="infusSec" hidden>
-      <h2 class="sub-h">Rumus infus kontinu</h2>
+      <h2 class="sub-h">Rumus kalkulator SP</h2>
       <p class="hint" id="infusHint"></p>
       <div id="infusList"></div>
-      <button class="btn ghost" id="infusAdd" type="button">Tambah rumus infus</button>
+      <button class="btn ghost" id="infusAdd" type="button">Tambah rumus SP</button>
     </section>
   </section>
 </main>
 
 <dialog id="tplDialog">
-  <h2>Template rumus infus</h2>
+  <h2>Template rumus SP</h2>
   <p class="msg err" id="tplMsg" role="alert" hidden></p>
   <ul class="tpl-list" id="tplList"></ul>
   <div class="grid3">
@@ -686,8 +686,8 @@
     const rec = rows.find(function (r) { return r.id === editId; });
     const ok = rec && Number(rec.konsentrasi_per_ml) > 0;
     $("infusHint").textContent = errText || (ok
-      ? "Kalkulator infus tampil di halaman publik bila obat ini terverifikasi dan punya minimal satu rumus."
-      : "Isi dulu Konsentrasi per mL dan Satuan dosis pada obat ini agar kalkulator infus dapat tampil.");
+      ? "Kalkulator SP tampil di halaman publik bila obat ini terverifikasi dan punya minimal satu rumus."
+      : "Isi dulu Konsentrasi per mL dan Satuan dosis pada obat ini agar kalkulator SP dapat tampil.");
     const box = $("infusList");
     box.replaceChildren();
     infusRows.forEach(function (r) { box.append(infusCard(r)); });

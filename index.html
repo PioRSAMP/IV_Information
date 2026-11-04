@@ -389,7 +389,7 @@
     const C = Number(r.konsentrasi_per_ml);
     if (!list.length || !(C > 0)) return;
     const unitS = String(r.satuan_dosis || "mg").toLowerCase();
-    d.append(el("h2", "sec", "Kalkulator infus kontinu"));
+    d.append(el("h2", "sec", "Kalkulator SP"));
     const wrap = el("div", "infus");
     const tabs = el("div", "tabs");
     tabs.setAttribute("role", "tablist");
