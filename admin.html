@@ -637,7 +637,10 @@
 
   async function loadTemplates() {
     const { data } = await db.from("rumus_infus").select("*").order("id");
-    tpls = data || [];
+    const ordS = { ng: 0, mcg: 1, mg: 2, g: 3, unit: 4 };
+    tpls = (data || []).slice().sort(function (x, y) {
+      return (ordS[x.satuan_dosis] - ordS[y.satuan_dosis]) || (Number(x.per_kgbb) - Number(y.per_kgbb)) || (x.per_waktu === y.per_waktu ? 0 : x.per_waktu === "menit" ? -1 : 1);
+    });
   }
   function renderTpls() {
     const ul = $("tplList");
