@@ -269,6 +269,71 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
+
+  /* Grafik batang kunjungan */
+  .chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding: 8px; background: linear-gradient(180deg, #fff, #f6fbf1); border: 1px solid var(--line); border-radius: 10px; }
+  .chart-col { flex: 1; min-width: 2px; height: 100%; display: flex; align-items: flex-end; }
+  .chart-bar { display: block; width: 100%; background: linear-gradient(var(--brand-green-2), var(--brand-green)); border-radius: 3px 3px 0 0; transition: height .3s, background .15s; }
+  .chart-col:hover .chart-bar { background: var(--brand-orange); }
+  .chart-axis { display: flex; justify-content: space-between; margin: 4px 2px 12px; font-size: .75rem; color: var(--muted); }
+
+  /* Kartu per bagian pada form */
+  .sec-card { min-width: 0; margin: 0 0 16px; padding: 16px 18px 4px; background: #fcfefb; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+  .sec-card legend { padding: 0 8px; font: 700 .72rem/1.2 "Plus Jakarta Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--brand-green); }
+
+  /* Tombol aksi form menempel di bawah layar pada HP */
+  @media (max-width: 759px) {
+    #form .actions {
+      position: sticky; bottom: 0; z-index: 3;
+      margin: 8px -18px 0; padding: 12px 18px;
+      background: var(--surface); border-top: 1px solid var(--line);
+      box-shadow: 0 -4px 12px rgba(29,45,34,.06);
+    }
+    .sec-card { padding: 14px 14px 2px; }
+  }
+
+  /* Mode gelap (mengikuti pengaturan perangkat) */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --ink: #e6efe8; --muted: #9db0a2; --line: #2c3a30;
+      --bg: #101712; --surface: #18211b;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+      --shadow-lg: 0 20px 48px rgba(0,0,0,.6);
+      --ring: 0 0 0 3px rgba(138,171,58,.3);
+      --warn-bg: #2b2410; --warn-ink: #f0c978;
+      --ok-bg: #16301f; --ok-ink: #8fd6a7;
+      --danger: #f08a8a; --danger-bg: #3a1b1b;
+    }
+    :focus-visible { outline-color: var(--brand-green-2); }
+    .btn.ghost { color: var(--ink); background: var(--surface); border-color: var(--line); }
+    .btn.ghost:hover:not(:disabled) { background: #202b23; border-color: #3a4c3f; }
+    .btn.danger { background: var(--surface); }
+    .btn.danger-fill { color: #fff; background: #b02e2e; border-color: #b02e2e; }
+    .btn.danger-fill:hover:not(:disabled) { background: #c23a3a; border-color: #c23a3a; }
+    .btn.on, .btn.on:hover:not(:disabled) { color: #fff; background: var(--brand-green); border-color: var(--brand-green); }
+    input, textarea, select { background: #1c261f; }
+    input:focus, textarea:focus, select:focus { background: #131b15; border-color: var(--brand-green-2); }
+    .msg.err, .login .msg.err { color: #ffb0b0; }
+    .back { color: #a8d08a; }
+    .item:hover { background: #202b23; }
+    .item[aria-current="true"] { background: rgba(138,171,58,.16); border-left-color: var(--brand-green-2); }
+    .badge { background: #3a2f12; color: var(--warn-ink); }
+    .badge.ok { background: var(--ok-bg); color: var(--ok-ink); }
+    .verif { border-color: #6b5320; }
+    .verif:has(#unverifBtn:not([hidden])) { border-color: #2f6b44; }
+    .dialog-foot { background: #1c261f; }
+    .infus-card, .sec-card { background: #1c261f; }
+    .chart { background: linear-gradient(180deg, #1d2820, #18211b); }
+    .sec-card legend { color: #a8d08a; }
+    .card { background: linear-gradient(180deg, #1d2820, #18211b); }
+    .card b { color: #a8d08a; }
+    #statTable tr:first-child th { background: #223027; }
+    #statTable tr:nth-child(even) td { background: #1c261f; }
+    .sbar { background: var(--brand-green-2); }
+    #form .actions { box-shadow: 0 -4px 12px rgba(0,0,0,.4); }
+  }
 </style>
 </head>
 <body>
@@ -331,52 +396,65 @@
       <button class="btn danger" id="unverifBtn" type="button" hidden>Cabut verifikasi</button>
     </div>
     <form id="form" novalidate>
-      <label>Nama obat
-        <input name="nama_obat" required>
-      </label>
-      <div class="row">
+      <fieldset class="sec-card">
+        <legend>Identitas obat</legend>
+        <label>Nama obat
+          <input name="nama_obat" required>
+        </label>
         <label>Bentuk sediaan
           <input name="bentuk_sediaan" placeholder="mis. vial serbuk injeksi 1 g">
         </label>
-        <label>Pelarut
-          <input name="pelarut">
-        </label>
-      </div>
-      <div class="row">
-        <label>Volume pelarut
-          <input name="volume_pelarut" placeholder="mis. 10 mL">
-        </label>
+      </fieldset>
+      <fieldset class="sec-card">
+        <legend>Pelarut dan konsentrasi</legend>
+        <div class="row">
+          <label>Pelarut
+            <input name="pelarut">
+          </label>
+          <label>Volume pelarut
+            <input name="volume_pelarut" placeholder="mis. 10 mL">
+          </label>
+        </div>
         <label>Konsentrasi akhir
           <input name="konsentrasi_akhir">
         </label>
-      </div>
-      <div class="row">
-        <label>Konsentrasi per mL (untuk kalkulator)
-          <span class="hint">Angka saja, mis. 100. Kosongkan jika kalkulator tidak dipakai.</span>
-          <input name="konsentrasi_per_ml" inputmode="decimal">
+      </fieldset>
+      <fieldset class="sec-card">
+        <legend>Data kalkulator</legend>
+        <div class="row">
+          <label>Konsentrasi per mL (untuk kalkulator)
+            <span class="hint">Angka saja, mis. 100. Kosongkan jika kalkulator tidak dipakai.</span>
+            <input name="konsentrasi_per_ml" inputmode="decimal">
+          </label>
+          <label>Satuan dosis sediaan
+            <span class="hint">Satuan konsentrasi per mL di samping.</span>
+            <select name="satuan_dosis">
+              <option value="">Pilih satuan</option>
+              <option value="ng">ng (nanogram)</option>
+              <option value="mcg">mcg (mikrogram)</option>
+              <option value="mg">mg (miligram)</option>
+              <option value="g">g (gram)</option>
+              <option value="unit">unit</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+      <fieldset class="sec-card">
+        <legend>Prosedur</legend>
+        <label>Cara rekonstitusi
+          <span class="hint">Tulis satu langkah per baris. Nomor langkah dibuat otomatis.</span>
+          <textarea name="cara_rekonstitusi" required></textarea>
         </label>
-        <label>Satuan dosis sediaan
-          <span class="hint">Satuan konsentrasi per mL di samping.</span>
-          <select name="satuan_dosis">
-            <option value="">Pilih satuan</option>
-            <option value="ng">ng (nanogram)</option>
-            <option value="mcg">mcg (mikrogram)</option>
-            <option value="mg">mg (miligram)</option>
-            <option value="g">g (gram)</option>
-            <option value="unit">unit</option>
-          </select>
+        <label>Stabilitas
+          <input name="stabilitas" placeholder="mis. stabil 24 jam pada suhu ruang">
         </label>
-      </div>
-      <label>Cara rekonstitusi
-        <span class="hint">Tulis satu langkah per baris. Nomor langkah dibuat otomatis.</span>
-        <textarea name="cara_rekonstitusi" required></textarea>
-      </label>
-      <label>Stabilitas
-        <input name="stabilitas" placeholder="mis. stabil 24 jam pada suhu ruang">
-      </label>
-      <label>Sumber
-        <input name="sumber" placeholder="Nama brosur atau literatur rujukan">
-      </label>
+      </fieldset>
+      <fieldset class="sec-card">
+        <legend>Referensi</legend>
+        <label>Sumber
+          <input name="sumber" placeholder="Nama brosur atau literatur rujukan">
+        </label>
+      </fieldset>
       <div class="actions">
         <button class="btn" id="saveBtn" type="submit">Simpan</button>
         <button class="btn ghost" id="resetBtn" type="button">Batal</button>
@@ -427,6 +505,9 @@
     </div>
     <p class="msg err" id="statMsg" role="alert" hidden></p>
     <div class="cards" id="statCards"></div>
+    <h3>Kunjungan per periode</h3>
+    <div class="chart" id="statChart" role="img" aria-label="Grafik kunjungan per periode"></div>
+    <div class="chart-axis"><span id="statAwal"></span><span id="statAkhir"></span></div>
     <div class="scroll"><table id="statTable"></table></div>
     <div class="two-col">
       <div><h3>Obat paling sering dibuka</h3><ol id="statObat"></ol></div>
@@ -502,11 +583,17 @@
 
   /* ---------- Dialog konfirmasi hapus ---------- */
   function confirmHapus(nama) {
+    return tanya("Konfirmasi hapus", "Yakin ingin menghapus " + nama + "? Tindakan ini tidak dapat dibatalkan.", "Hapus");
+  }
+  // Dialog konfirmasi umum; mengembalikan Promise<boolean>
+  function tanya(judul, teks, labelOk) {
     return new Promise(function (resolve) {
       const dlg = $("confirmDialog");
       const ok = $("confirmOk"), no = $("confirmCancel");
       let hasil = false;
-      $("confirmText").textContent = "Yakin ingin menghapus " + nama + "? Tindakan ini tidak dapat dibatalkan.";
+      $("confirmTitle").textContent = judul;
+      $("confirmText").textContent = teks;
+      ok.textContent = labelOk;
       function onOk() { hasil = true; dlg.close(); }
       function onNo() { dlg.close(); }
       function onClose() {
@@ -606,7 +693,8 @@
       if (r.bentuk_sediaan) btn.append(el("span", "item-sub", r.bentuk_sediaan));
       btn.append(el("span", "badge" + (r.status === "terverifikasi" ? " ok" : ""), r.status === "terverifikasi" ? "Terverifikasi" : "Draf"));
       if (r.id === editId) btn.setAttribute("aria-current", "true");
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", async function () {
+        if (!(await bolehTinggalkan())) return;
         fillForm(r);
         $("appView").classList.add("show-form");
         window.scrollTo(0, 0);
@@ -641,7 +729,17 @@
     renderList();
   }
 
-  $("addBtn").addEventListener("click", function () {
+  // Peringatan bila ada perubahan yang belum disimpan
+  async function bolehTinggalkan() {
+    if (!dirty) return true;
+    return tanya("Perubahan belum disimpan", "Perubahan pada formulir ini belum disimpan dan akan hilang jika Anda pindah. Lanjutkan?", "Buang perubahan");
+  }
+  window.addEventListener("beforeunload", function (e) {
+    if (dirty && !$("appView").hidden) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  $("addBtn").addEventListener("click", async function () {
+    if (!(await bolehTinggalkan())) return;
     fillForm(null);
     $("appView").classList.add("show-form");
     window.scrollTo(0, 0);
@@ -954,6 +1052,21 @@
         box.append(el("b", null, nf(c[1])), el("span", null, c[0]));
         cards.append(box);
       });
+
+    const chart = $("statChart");
+    chart.replaceChildren();
+    const maxK = Math.max(1, ...seri.map(function (r) { return Number(r.kunjungan); }));
+    seri.forEach(function (r) {
+      const col = el("div", "chart-col");
+      col.title = r.periode + ": " + nf(r.kunjungan) + " kunjungan";
+      const bar = el("span", "chart-bar");
+      bar.style.height = Math.max(2, Math.round(Number(r.kunjungan) / maxK * 100)) + "%";
+      col.append(bar);
+      chart.append(col);
+    });
+    chart.setAttribute("aria-label", "Grafik kunjungan per periode, tertinggi " + nf(maxK));
+    $("statAwal").textContent = seri.length ? seri[0].periode : "";
+    $("statAkhir").textContent = seri.length ? seri[seri.length - 1].periode : "";
 
     const t = $("statTable");
     t.replaceChildren();
