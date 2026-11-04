@@ -8,21 +8,30 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #eef3f5;
+    --brand-green: #3d7a2b;
+    --brand-green-2: #8aab3a;
+    --brand-orange: #f08a1e;
+    --brand-brown: #8a3f1f;
+    --ink: #1d2d22;
+    --muted: #5d7164;
+    --line: #dbe5d2;
+    --bg: #f6f9f3;
     --surface: #ffffff;
-    --ink: #16303a;
-    --muted: #55707a;
-    --line: #c9d8dd;
-    --accent: #0e6e7e;
-    --accent-soft: #d9ecef;
-    --danger: #a32626;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 1px 2px rgba(29,45,34,.06), 0 1px 3px rgba(29,45,34,.05);
+    --shadow-md: 0 4px 12px rgba(29,45,34,.08), 0 2px 4px rgba(29,45,34,.05);
+    --shadow-lg: 0 20px 48px rgba(29,45,34,.22), 0 4px 12px rgba(29,45,34,.10);
+    --ring: 0 0 0 3px rgba(61,122,43,.18);
+    --warn-bg: #fff6df;
+    --warn-ink: #7a5200;
     --ok-bg: #e2f3e8;
     --ok-ink: #1d5b34;
-    --err-bg: #fbe6e6;
-    --err-ink: #8c1f1f;
+    --danger: #a32626;
+    --danger-bg: #fde8e8;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -33,66 +42,96 @@
     flex-direction: column;
     background: var(--bg);
     color: var(--ink);
-    font: 400 16px/1.55 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 400 16px/1.55 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  h1, h2, h3, .card b { font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+  :focus-visible { outline: 2px solid var(--brand-green); outline-offset: 2px; }
+  button, input, textarea, select { transition: background .15s, border-color .15s, box-shadow .15s, color .15s; }
 
-  header { background: var(--ink); color: #fff; padding: 16px 20px; }
+  /* Header */
+  header { background: linear-gradient(135deg, #2b5a1e, var(--brand-green)); color: #fff; padding: 14px 20px; box-shadow: var(--shadow-md); }
   .bar { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  h1 { margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; }
   .brand-row { display: flex; align-items: center; gap: 14px; }
   .chip { display: flex; padding: 4px 10px; background: #fff; border-radius: 8px; }
   .chip img { display: block; height: 36px; width: auto; }
-  .bar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
-  .bar a { color: #b9d3da; }
+  .bar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; }
+  .bar a { color: rgba(255,255,255,.85); text-decoration: none; font-size: .92rem; }
+  .bar a:hover { color: #fff; text-decoration: underline; }
+  header :focus-visible { outline-color: #fff; }
 
+  /* Tombol */
   .btn {
     padding: 10px 16px;
     font: inherit;
     font-weight: 500;
     color: #fff;
-    background: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
+    background: var(--brand-green);
+    border: 1px solid var(--brand-green);
+    border-radius: var(--radius-sm);
     cursor: pointer;
   }
+  .btn:hover:not(:disabled) { background: #336b24; border-color: #336b24; }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
   .btn:disabled { opacity: 0.6; cursor: default; }
   .btn.ghost { color: var(--ink); background: #fff; border-color: var(--line); }
+  .btn.ghost:hover:not(:disabled) { background: #f1f6ec; border-color: #c4d4b8; }
   .btn.danger { color: var(--danger); background: #fff; border-color: var(--danger); }
-  header .btn.ghost { padding: 6px 12px; }
+  .btn.danger:hover:not(:disabled) { background: var(--danger-bg); border-color: var(--danger); }
+  .btn.danger-fill { color: #fff; background: var(--danger); border-color: var(--danger); }
+  .btn.danger-fill:hover:not(:disabled) { background: #8c1f1f; border-color: #8c1f1f; }
+  .btn.on, .btn.on:hover:not(:disabled) { color: #fff; background: var(--brand-green); border-color: var(--brand-green); }
+  header .btn.ghost {
+    padding: 6px 12px; color: #fff;
+    background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22);
+  }
+  header .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.35); }
+  header #logout { background: rgba(163,38,38,.85); border-color: rgba(255,255,255,.35); }
+  header #logout:hover:not(:disabled) { background: rgba(163,38,38,1); }
 
+  /* Login */
   .login {
     width: 100%;
     max-width: 380px;
     margin: 48px auto;
-    padding: 24px;
+    padding: 28px;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
   }
   .login h2 { margin: 0 0 4px; font-size: 1.3rem; }
   .login p { margin: 0 0 16px; color: var(--muted); }
+  .login .msg { color: var(--ok-ink); }
+  .login .msg.err { color: #8c1f1f; }
 
-  label { display: block; margin-bottom: 14px; font-weight: 500; }
-  .hint { display: block; font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+  /* Form umum */
+  label { display: block; margin-bottom: 14px; font-weight: 600; font-size: .86rem; }
+  .hint { display: block; font-weight: 400; font-size: .78rem; color: var(--muted); }
   input, textarea {
     display: block;
     width: 100%;
     margin-top: 4px;
-    padding: 10px 12px;
+    padding: 10px 13px;
     font: inherit;
     font-weight: 400;
+    font-size: .95rem;
     color: var(--ink);
-    background: #fff;
+    background: #fbfdf9;
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
   }
   textarea { min-height: 150px; resize: vertical; }
+  select { padding: 10px 13px; font: inherit; font-weight: 400; font-size: .95rem; color: var(--ink); background: #fbfdf9; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+  label select { display: block; width: 100%; margin-top: 4px; }
+  input:focus, textarea:focus, select:focus { background: #fff; border-color: var(--brand-green); box-shadow: var(--ring); outline: none; }
 
-  .msg { margin: 0 0 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; }
+  .msg { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.95rem; }
   .msg.ok { background: var(--ok-bg); color: var(--ok-ink); }
-  .msg.err { background: var(--err-bg); color: var(--err-ink); }
+  .msg.err { background: var(--danger-bg); color: #8c1f1f; }
 
+  /* Layout */
   .layout {
     flex: 1;
     width: 100%;
@@ -104,7 +143,9 @@
     gap: 20px;
     align-items: start;
   }
+  .layout > * { min-width: 0; }
   .list-tools { display: grid; gap: 8px; margin-bottom: 8px; }
+  .list-tools input, .list-tools select { margin-top: 0; }
   .status { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
   .list {
     list-style: none;
@@ -112,7 +153,8 @@
     padding: 0;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
   }
   .list li + li { border-top: 1px solid var(--line); }
@@ -127,20 +169,21 @@
     border: 0;
     border-left: 3px solid transparent;
     cursor: pointer;
+    transition: background .15s, border-color .15s;
   }
   .item:hover { background: var(--bg); }
-  .item[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
-  .item-name { display: block; font-weight: 500; }
-  .item-sub { display: block; font-size: 0.875rem; color: var(--muted); }
+  .item[aria-current="true"] { background: #eaf3df; border-left-color: var(--brand-green); font-weight: 500; }
+  .item-name { display: block; font-weight: inherit; }
+  .item-sub { display: block; font-size: 0.875rem; font-weight: 400; color: var(--muted); }
 
   .form-pane {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 24px;
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow-sm);
   }
-  .form-pane h2 { margin: 0 0 16px; font-size: 1.4rem; }
-  .layout > * { min-width: 0; }
+  .form-pane h2 { margin: 0 0 16px; font-size: 1.4rem; letter-spacing: -0.01em; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
   .actions .spacer { flex: 1; }
@@ -150,54 +193,81 @@
     padding: 6px 0;
     font: inherit;
     font-weight: 500;
-    color: var(--accent);
+    color: var(--brand-green);
     background: none;
     border: 0;
     cursor: pointer;
   }
 
-  .badge { display: inline-block; margin-top: 4px; padding: 1px 9px; font-size: .75rem; font-weight: 600; color: #7a5200; background: #fff3d6; border-radius: 999px; }
-  .badge.ok { color: #1d5b34; background: #e2f3e8; }
-  .verif { margin: 0 0 16px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .badge { display: inline-block; margin-top: 4px; padding: 1px 9px; font-size: .7rem; font-weight: 600; color: var(--warn-ink); background: #fff3d6; border-radius: 999px; }
+  .badge.ok { color: var(--ok-ink); background: var(--ok-bg); }
+
+  /* Banner verifikasi: Draf = kuning, terverifikasi = hijau (lewat :has, tanpa ubah JS) */
+  .verif { margin: 0 0 16px; padding: 12px 14px; background: var(--warn-bg); border: 1px solid #e8c36a; border-radius: var(--radius-sm); color: var(--warn-ink); }
+  .verif:has(#unverifBtn:not([hidden])) { background: var(--ok-bg); border-color: #b8dfc5; color: var(--ok-ink); }
   .verif p { margin: 0 0 8px; }
-  label select { display: block; width: 100%; margin-top: 4px; }
-  select { padding: 10px 12px; font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; }
-  dialog { width: min(380px, 92vw); padding: 22px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
-  dialog::backdrop { background: rgba(20,48,59,.45); }
-  dialog h2 { margin: 0 0 12px; font-size: 1.2rem; }
-  #tplDialog { width: min(480px, 92vw); max-height: 90vh; overflow: auto; }
+
+  /* Dialog */
+  dialog {
+    width: min(380px, 92vw);
+    padding: 0;
+    color: var(--ink);
+    background: var(--surface);
+    border: none;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  dialog[open] { display: flex; flex-direction: column; max-height: 92vh; }
+  dialog::backdrop { background: rgba(29,45,34,.55); backdrop-filter: blur(4px); }
+  dialog form { display: flex; flex-direction: column; min-height: 0; }
+  .dialog-head { padding: 20px 24px 12px; border-bottom: 1px solid var(--line); }
+  .dialog-head h2 { margin: 0; font-size: 1.2rem; }
+  .dialog-body { padding: 20px 24px; overflow: auto; min-height: 0; }
+  .dialog-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; background: #fbfdf9; border-top: 1px solid var(--line); }
+  .dialog-body .msg:first-child { margin-top: 0; }
+  .dialog-body > *:last-child { margin-bottom: 0; }
+  #tplDialog { width: min(480px, 92vw); }
   .tpl-list { list-style: none; margin: 0 0 14px; padding: 0; }
   .tpl-list li { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
   .tpl-list .btn { padding: 4px 12px; }
-  #statDialog { width: min(960px, 94vw); max-height: 92vh; overflow: auto; }
+  #statDialog { width: min(960px, 94vw); }
   #statDialog h3 { margin: 18px 0 6px; font-size: 1rem; }
   .stat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-  .btn.on { color: #fff; background: var(--accent); border-color: var(--accent); }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
-  .card { padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
-  .card b { display: block; font-size: 1.5rem; line-height: 1.2; }
+  .card { padding: 12px 14px; background: linear-gradient(180deg, #fff, #f6fbf1); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-sm); }
+  .card b { display: block; font-size: 1.7rem; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--brand-green); }
   .card span { font-size: .85rem; color: var(--muted); }
-  .scroll { overflow-x: auto; }
-  #statTable { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  #statTable th, #statTable td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .scroll { overflow: auto; max-height: 340px; border: 1px solid var(--line); border-radius: 10px; }
+  #statTable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  #statTable th, #statTable td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
   #statTable th:first-child, #statTable td:first-child { text-align: left; }
-  .sbar { display: block; height: 4px; margin-top: 3px; background: var(--accent); border-radius: 2px; }
+  #statTable tr:first-child th { position: sticky; top: 0; z-index: 1; background: #f1f6ec; font-weight: 600; }
+  #statTable tr:nth-child(even) td { background: #fafcf7; }
+  .sbar { display: block; height: 4px; margin-top: 3px; background: var(--brand-green); border-radius: 2px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .two-col ol { margin: 0; padding-left: 1.2rem; }
-  @media (max-width: 759px) { .two-col { grid-template-columns: 1fr; } }
+
   #infusSec { margin-top: 24px; padding-top: 8px; border-top: 1px solid var(--line); }
   .sub-h { margin: 16px 0 4px; font-size: 1.15rem; }
-  .infus-card { margin: 12px 0; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .infus-card { margin: 12px 0; padding: 14px; background: #fbfdf9; border: 1px solid var(--line); border-radius: var(--radius-sm); }
   .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; }
-  @media (max-width: 759px) { .grid3 { grid-template-columns: 1fr; } }
 
   @media (max-width: 759px) {
+    .two-col { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr; }
     .layout { grid-template-columns: 1fr; padding: 16px; }
     .layout.show-form .list-pane { display: none; }
     .layout:not(.show-form) .form-pane { display: none; }
     .back { display: inline-block; }
     .row { grid-template-columns: 1fr; }
     .form-pane { padding: 18px; }
+    .dialog-head { padding: 16px 18px 10px; }
+    .dialog-body { padding: 16px 18px; }
+    .dialog-foot { padding: 12px 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
@@ -325,63 +395,80 @@
 </main>
 
 <dialog id="tplDialog">
-  <h2>Template rumus SP</h2>
-  <p class="msg err" id="tplMsg" role="alert" hidden></p>
-  <ul class="tpl-list" id="tplList"></ul>
-  <div class="grid3">
-    <label>Satuan dosis
-      <select id="tplSatuan"><option>ng</option><option>mcg</option><option>mg</option><option>g</option><option>unit</option></select>
-    </label>
-    <label>Per waktu
-      <select id="tplWaktu"><option>menit</option><option>jam</option></select>
-    </label>
-    <label>Berat badan
-      <select id="tplBB"><option value="0">Tidak dipakai</option><option value="1">Per kgBB</option></select>
-    </label>
+  <div class="dialog-head"><h2>Template rumus SP</h2></div>
+  <div class="dialog-body">
+    <p class="msg err" id="tplMsg" role="alert" hidden></p>
+    <ul class="tpl-list" id="tplList"></ul>
+    <div class="grid3">
+      <label>Satuan dosis
+        <select id="tplSatuan"><option>ng</option><option>mcg</option><option>mg</option><option>g</option><option>unit</option></select>
+      </label>
+      <label>Per waktu
+        <select id="tplWaktu"><option>menit</option><option>jam</option></select>
+      </label>
+      <label>Berat badan
+        <select id="tplBB"><option value="0">Tidak dipakai</option><option value="1">Per kgBB</option></select>
+      </label>
+    </div>
   </div>
-  <div class="actions">
+  <div class="dialog-foot">
     <button class="btn" id="tplAdd" type="button">Tambah template</button>
     <button class="btn ghost" id="tplClose" type="button">Tutup</button>
   </div>
 </dialog>
 
 <dialog id="statDialog">
-  <h2>Statistik penggunaan</h2>
-  <div class="stat-tabs" id="statTabs">
-    <button class="btn ghost" data-p="hari" type="button">Harian (30 hari)</button>
-    <button class="btn ghost" data-p="bulan" type="button">Bulanan (12 bulan)</button>
-    <button class="btn ghost" data-p="tahun" type="button">Tahunan (5 tahun)</button>
+  <div class="dialog-head"><h2>Statistik penggunaan</h2></div>
+  <div class="dialog-body">
+    <div class="stat-tabs" id="statTabs">
+      <button class="btn ghost" data-p="hari" type="button">Harian (30 hari)</button>
+      <button class="btn ghost" data-p="bulan" type="button">Bulanan (12 bulan)</button>
+      <button class="btn ghost" data-p="tahun" type="button">Tahunan (5 tahun)</button>
+    </div>
+    <p class="msg err" id="statMsg" role="alert" hidden></p>
+    <div class="cards" id="statCards"></div>
+    <div class="scroll"><table id="statTable"></table></div>
+    <div class="two-col">
+      <div><h3>Obat paling sering dibuka</h3><ol id="statObat"></ol></div>
+      <div><h3>Pencarian tanpa hasil</h3><ol id="statKata"></ol></div>
+    </div>
+    <p class="hint">Waktu memakai zona Asia/Jakarta. Angka bersifat perkiraan pemakaian, bukan hitungan yang presisi. Isian dosis dan berat badan tidak pernah dicatat.</p>
   </div>
-  <p class="msg err" id="statMsg" role="alert" hidden></p>
-  <div class="cards" id="statCards"></div>
-  <div class="scroll"><table id="statTable"></table></div>
-  <div class="two-col">
-    <div><h3>Obat paling sering dibuka</h3><ol id="statObat"></ol></div>
-    <div><h3>Pencarian tanpa hasil</h3><ol id="statKata"></ol></div>
+  <div class="dialog-foot">
+    <button class="btn ghost" id="statClose" type="button">Tutup</button>
   </div>
-  <p class="hint">Waktu memakai zona Asia/Jakarta. Angka bersifat perkiraan pemakaian, bukan hitungan yang presisi. Isian dosis dan berat badan tidak pernah dicatat.</p>
-  <div class="actions"><button class="btn ghost" id="statClose" type="button">Tutup</button></div>
 </dialog>
 
 <dialog id="pinDialog">
   <form id="pinForm" novalidate>
-    <h2 id="pinTitle">Verifikasi obat</h2>
-    <p class="msg err" id="pinMsg" role="alert" hidden></p>
-    <label id="namaWrap">Nama verifikator
-      <input id="pinNama" autocomplete="off">
-    </label>
-    <label><span id="pinLabel">PIN verifikasi</span>
-      <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
-    </label>
-    <label id="pinBaruWrap">PIN baru
-      <span class="hint">6 sampai 12 angka</span>
-      <input id="pinBaru" type="password" inputmode="numeric" autocomplete="off">
-    </label>
-    <div class="actions">
-      <button class="btn" id="pinOk" type="submit">Lanjut</button>
+    <div class="dialog-head"><h2 id="pinTitle">Verifikasi obat</h2></div>
+    <div class="dialog-body">
+      <p class="msg err" id="pinMsg" role="alert" hidden></p>
+      <label id="namaWrap">Nama verifikator
+        <input id="pinNama" autocomplete="off">
+      </label>
+      <label><span id="pinLabel">PIN verifikasi</span>
+        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
+      </label>
+      <label id="pinBaruWrap">PIN baru
+        <span class="hint">6 sampai 12 angka</span>
+        <input id="pinBaru" type="password" inputmode="numeric" autocomplete="off">
+      </label>
+    </div>
+    <div class="dialog-foot">
       <button class="btn ghost" id="pinCancel" type="button">Batal</button>
+      <button class="btn" id="pinOk" type="submit">Lanjut</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="dialog-head"><h2 id="confirmTitle">Konfirmasi hapus</h2></div>
+  <div class="dialog-body"><p id="confirmText" style="margin:0"></p></div>
+  <div class="dialog-foot">
+    <button class="btn ghost" id="confirmCancel" type="button">Batal</button>
+    <button class="btn danger-fill" id="confirmOk" type="button">Hapus</button>
+  </div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -411,6 +498,28 @@
     node.textContent = text;
     node.className = "msg " + kind;
     node.hidden = false;
+  }
+
+  /* ---------- Dialog konfirmasi hapus ---------- */
+  function confirmHapus(nama) {
+    return new Promise(function (resolve) {
+      const dlg = $("confirmDialog");
+      const ok = $("confirmOk"), no = $("confirmCancel");
+      let hasil = false;
+      $("confirmText").textContent = "Yakin ingin menghapus " + nama + "? Tindakan ini tidak dapat dibatalkan.";
+      function onOk() { hasil = true; dlg.close(); }
+      function onNo() { dlg.close(); }
+      function onClose() {
+        ok.removeEventListener("click", onOk);
+        no.removeEventListener("click", onNo);
+        resolve(hasil);
+      }
+      ok.addEventListener("click", onOk);
+      no.addEventListener("click", onNo);
+      dlg.addEventListener("close", onClose, { once: true });
+      dlg.showModal();
+      no.focus();
+    });
   }
 
   /* ---------- Login ---------- */
@@ -586,7 +695,7 @@
   $("deleteBtn").addEventListener("click", async function () {
     const record = rows.find(function (r) { return r.id === editId; });
     if (!record) return;
-    if (!confirm("Hapus “" + record.nama_obat + "”? Tindakan ini tidak dapat dibatalkan.")) return;
+    if (!(await confirmHapus("“" + record.nama_obat + "”"))) return;
     const { error } = await db.from("obat").delete().eq("id", editId);
     if (error) {
       showMsg($("formMsg"), "Data belum terhapus. Coba lagi.", "err");
@@ -688,7 +797,7 @@
       const b = el("button", "btn danger", "Hapus");
       b.type = "button";
       b.addEventListener("click", async function () {
-        if (!confirm("Hapus template " + tplName(t) + "?")) return;
+        if (!(await confirmHapus("template " + tplName(t)))) return;
         const { error } = await db.from("rumus_infus").delete().eq("id", t.id);
         if (error) { showMsg($("tplMsg"), "Template masih dipakai oleh obat, jadi tidak bisa dihapus.", "err"); return; }
         $("tplMsg").hidden = true;
@@ -815,7 +924,7 @@
     });
     dl.addEventListener("click", async function () {
       if (!r.id) { card.remove(); return; }
-      if (!confirm("Hapus rumus ini dari obat?")) return;
+      if (!(await confirmHapus("rumus ini dari obat"))) return;
       const { error } = await db.from("obat_infus").delete().eq("id", r.id);
       if (error) { showMsg(msg, "Rumus belum terhapus. Coba lagi.", "err"); return; }
       await afterInfusChange("Rumus dihapus.");
