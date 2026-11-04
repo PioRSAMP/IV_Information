@@ -159,10 +159,20 @@
   .badge.ok { color: #1d5b34; background: #e2f3e8; }
   .verif { margin: 0 0 16px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
   .verif p { margin: 0 0 8px; }
+  label select { display: block; width: 100%; margin-top: 4px; }
   select { padding: 10px 12px; font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; }
   dialog { width: min(380px, 92vw); padding: 22px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
   dialog::backdrop { background: rgba(20,48,59,.45); }
   dialog h2 { margin: 0 0 12px; font-size: 1.2rem; }
+  #tplDialog { width: min(480px, 92vw); max-height: 90vh; overflow: auto; }
+  .tpl-list { list-style: none; margin: 0 0 14px; padding: 0; }
+  .tpl-list li { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .tpl-list .btn { padding: 4px 12px; }
+  #infusSec { margin-top: 24px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .sub-h { margin: 16px 0 4px; font-size: 1.15rem; }
+  .infus-card { margin: 12px 0; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 12px; }
+  @media (max-width: 759px) { .grid3 { grid-template-columns: 1fr; } }
 
   @media (max-width: 759px) {
     .layout { grid-template-columns: 1fr; padding: 16px; }
@@ -184,6 +194,7 @@
     </div>
     <div class="bar-actions">
       <a href="index.html">Lihat halaman publik</a>
+      <button class="btn ghost" id="tplBtn" type="button" hidden>Template rumus</button>
       <button class="btn ghost" id="pinBtn" type="button" hidden>Ganti PIN</button>
       <button class="btn ghost" id="logout" type="button" hidden>Keluar</button>
     </div>
@@ -256,9 +267,16 @@
           <span class="hint">Angka saja, mis. 100. Kosongkan jika kalkulator tidak dipakai.</span>
           <input name="konsentrasi_per_ml" inputmode="decimal">
         </label>
-        <label>Satuan dosis
-          <span class="hint">mis. mg, mcg, unit. Kosong = mg.</span>
-          <input name="satuan_dosis" placeholder="mg">
+        <label>Satuan dosis sediaan
+          <span class="hint">Satuan konsentrasi per mL di samping.</span>
+          <select name="satuan_dosis">
+            <option value="">Pilih satuan</option>
+            <option value="ng">ng (nanogram)</option>
+            <option value="mcg">mcg (mikrogram)</option>
+            <option value="mg">mg (miligram)</option>
+            <option value="g">g (gram)</option>
+            <option value="unit">unit</option>
+          </select>
         </label>
       </div>
       <label>Cara rekonstitusi
@@ -278,8 +296,36 @@
         <button class="btn danger" id="deleteBtn" type="button" hidden>Hapus obat</button>
       </div>
     </form>
+
+    <section id="infusSec" hidden>
+      <h2 class="sub-h">Rumus infus kontinu</h2>
+      <p class="hint" id="infusHint"></p>
+      <div id="infusList"></div>
+      <button class="btn ghost" id="infusAdd" type="button">Tambah rumus infus</button>
+    </section>
   </section>
 </main>
+
+<dialog id="tplDialog">
+  <h2>Template rumus infus</h2>
+  <p class="msg err" id="tplMsg" role="alert" hidden></p>
+  <ul class="tpl-list" id="tplList"></ul>
+  <div class="grid3">
+    <label>Satuan dosis
+      <select id="tplSatuan"><option>ng</option><option>mcg</option><option>mg</option><option>g</option><option>unit</option></select>
+    </label>
+    <label>Per waktu
+      <select id="tplWaktu"><option>menit</option><option>jam</option></select>
+    </label>
+    <label>Berat badan
+      <select id="tplBB"><option value="0">Tidak dipakai</option><option value="1">Per kgBB</option></select>
+    </label>
+  </div>
+  <div class="actions">
+    <button class="btn" id="tplAdd" type="button">Tambah template</button>
+    <button class="btn ghost" id="tplClose" type="button">Tutup</button>
+  </div>
+</dialog>
 
 <dialog id="pinDialog">
   <form id="pinForm" novalidate>
@@ -338,6 +384,7 @@
     $("appView").hidden = true;
     $("logout").hidden = true;
     $("pinBtn").hidden = true;
+    $("tplBtn").hidden = true;
 
     if (!session) {
       $("loginView").hidden = false;
@@ -353,6 +400,7 @@
     $("appView").hidden = false;
     $("logout").hidden = false;
     $("pinBtn").hidden = false;
+    $("tplBtn").hidden = false;
     fillForm(null);
     loadList($("search").value.trim());
   }
@@ -436,11 +484,13 @@
     FIELDS.forEach(function (name) {
       form.elements[name].value = record && record[name] != null ? record[name] : "";
     });
+    if (!form.elements.satuan_dosis.value) form.elements.satuan_dosis.value = record ? "" : "mg";
     $("formTitle").textContent = record ? "Ubah obat" : "Tambah obat";
     $("deleteBtn").hidden = !record;
     $("formMsg").hidden = true;
     dirty = false;
     renderVerif(record);
+    showInfus(record);
     renderList();
   }
 
@@ -471,7 +521,10 @@
       if (!isFinite(n) || n <= 0) { showMsg($("formMsg"), "Konsentrasi per mL harus berupa angka lebih dari 0.", "err"); return; }
       payload.konsentrasi_per_ml = n;
     }
-    payload.satuan_dosis = payload.satuan_dosis || "mg";
+    if (!payload.satuan_dosis) {
+      if (payload.konsentrasi_per_ml !== null) { showMsg($("formMsg"), "Pilih satuan dosis sediaan.", "err"); return; }
+      payload.satuan_dosis = "mg";
+    }
 
     const wasNew = !editId;
     const prev = rows.find(function (r) { return r.id === editId; });
@@ -576,6 +629,157 @@
     fillForm(rec || null);
     showMsg($("formMsg"), pinMode === "verifikasi" ? "Obat terverifikasi dan sekarang tampil di halaman publik." : "Verifikasi dicabut. Obat tidak lagi tampil di halaman publik.", "ok");
   });
+
+  /* ---------- Rumus infus ---------- */
+  let tpls = [], infusRows = [];
+  const NUMF = [["dosis_min", "Dosis minimum"], ["dosis_maks", "Dosis maksimum"], ["kecepatan_maks", "Kecepatan maks (mL/jam)"], ["volume_obat_awal", "Volume obat awal (mL)"], ["total_volume_awal", "Total volume awal (mL)"]];
+  function tplName(t) { return t.satuan_dosis + (t.per_kgbb ? "/kgBB" : "") + "/" + t.per_waktu; }
+
+  async function loadTemplates() {
+    const { data } = await db.from("rumus_infus").select("*").order("id");
+    tpls = data || [];
+  }
+  function renderTpls() {
+    const ul = $("tplList");
+    ul.replaceChildren();
+    tpls.forEach(function (t) {
+      const li = document.createElement("li");
+      const b = el("button", "btn danger", "Hapus");
+      b.type = "button";
+      b.addEventListener("click", async function () {
+        if (!confirm("Hapus template " + tplName(t) + "?")) return;
+        const { error } = await db.from("rumus_infus").delete().eq("id", t.id);
+        if (error) { showMsg($("tplMsg"), "Template masih dipakai oleh obat, jadi tidak bisa dihapus.", "err"); return; }
+        $("tplMsg").hidden = true;
+        await loadTemplates(); renderTpls();
+      });
+      li.append(el("span", null, tplName(t)), b);
+      ul.append(li);
+    });
+  }
+  $("tplBtn").addEventListener("click", async function () {
+    $("tplMsg").hidden = true;
+    await loadTemplates(); renderTpls();
+    $("tplDialog").showModal();
+  });
+  $("tplClose").addEventListener("click", function () { $("tplDialog").close(); });
+  $("tplAdd").addEventListener("click", async function () {
+    const { error } = await db.from("rumus_infus").insert({ satuan_dosis: $("tplSatuan").value, per_waktu: $("tplWaktu").value, per_kgbb: $("tplBB").value === "1" });
+    if (error) { showMsg($("tplMsg"), error.code === "23505" ? "Template itu sudah ada." : "Template belum tersimpan. Coba lagi.", "err"); return; }
+    $("tplMsg").hidden = true;
+    await loadTemplates(); renderTpls();
+  });
+
+  function showInfus(rec) {
+    $("infusSec").hidden = !rec;
+    if (!rec) { infusRows = []; $("infusList").replaceChildren(); return; }
+    loadInfus(rec.id);
+  }
+  async function loadInfus(id) {
+    if (!tpls.length) await loadTemplates();
+    const { data, error } = await db.from("obat_infus").select("*").eq("obat_id", id).order("id");
+    if (id !== editId) return;
+    infusRows = error ? [] : data;
+    renderInfus(error ? "Tabel infus belum tersedia. Jalankan supabase-infus.sql di Supabase." : null);
+  }
+  function renderInfus(errText) {
+    const rec = rows.find(function (r) { return r.id === editId; });
+    const ok = rec && Number(rec.konsentrasi_per_ml) > 0;
+    $("infusHint").textContent = errText || (ok
+      ? "Kalkulator infus tampil di halaman publik bila obat ini terverifikasi dan punya minimal satu rumus."
+      : "Isi dulu Konsentrasi per mL dan Satuan dosis pada obat ini agar kalkulator infus dapat tampil.");
+    const box = $("infusList");
+    box.replaceChildren();
+    infusRows.forEach(function (r) { box.append(infusCard(r)); });
+  }
+  $("infusAdd").addEventListener("click", function () {
+    if (!tpls.length) { showMsg($("formMsg"), "Buat template rumus dulu lewat tombol Template rumus.", "err"); return; }
+    $("infusList").append(infusCard({}));
+  });
+
+  async function afterInfusChange(text) {
+    const id = editId;
+    const prev = rows.find(function (r) { return r.id === id; });
+    const was = !!prev && prev.status === "terverifikasi";
+    await loadInfus(id);
+    const { data } = await db.from("obat").select("*").eq("id", id).single();
+    if (data) {
+      const i = rows.findIndex(function (r) { return r.id === id; });
+      if (i >= 0) rows[i] = data;
+      renderVerif(data);
+      renderList();
+    }
+    showMsg($("formMsg"), text + (was && data && data.status === "draf" ? " Obat kembali ke draf dan perlu diverifikasi ulang." : ""), "ok");
+  }
+
+  function infusCard(r) {
+    const card = el("div", "infus-card");
+    const msg = el("p", "msg");
+    msg.hidden = true;
+    const lab = el("label", null, "Rumus");
+    const sel = document.createElement("select");
+    const recObat = rows.find(function (x) { return x.id === editId; });
+    const suObat = String((recObat && recObat.satuan_dosis) || "mg").toLowerCase();
+    tpls.filter(function (t) { return t.id === r.rumus_id || (t.satuan_dosis === "unit") === (suObat === "unit"); }).forEach(function (t) {
+      const o = document.createElement("option");
+      o.value = t.id; o.textContent = tplName(t);
+      if (t.id === r.rumus_id) o.selected = true;
+      sel.append(o);
+    });
+    lab.append(sel);
+    card.append(msg, lab);
+    const grid = el("div", "grid3");
+    const inputs = {};
+    NUMF.forEach(function (f) {
+      const l = el("label", null, f[1]);
+      const i = document.createElement("input");
+      i.inputMode = "decimal";
+      i.value = r[f[0]] != null ? r[f[0]] : "";
+      inputs[f[0]] = i;
+      l.append(i);
+      grid.append(l);
+    });
+    card.append(grid);
+    const lc = el("label", null, "Catatan (mis. dosis awal, rumatan)");
+    const ic = document.createElement("input");
+    ic.value = r.catatan || "";
+    lc.append(ic);
+    card.append(lc);
+    const act = el("div", "actions");
+    const sv = el("button", "btn", "Simpan rumus");
+    const dl = el("button", "btn danger", "Hapus rumus");
+    sv.type = "button"; dl.type = "button";
+    act.append(sv, dl);
+    card.append(act);
+
+    sv.addEventListener("click", async function () {
+      const p = { rumus_id: Number(sel.value), catatan: ic.value.trim() || null };
+      for (const f of NUMF) {
+        const raw = inputs[f[0]].value.trim().replace(",", ".");
+        if (raw === "") { p[f[0]] = null; continue; }
+        const n = Number(raw);
+        if (!isFinite(n) || n < 0 || (f[0] !== "dosis_min" && n === 0)) { showMsg(msg, f[1] + " harus berupa angka yang valid.", "err"); return; }
+        p[f[0]] = n;
+      }
+      if (!p.rumus_id) { showMsg(msg, "Pilih rumus. Buat template dulu bila belum ada.", "err"); return; }
+      if (p.dosis_min != null && p.dosis_maks != null && p.dosis_min > p.dosis_maks) { showMsg(msg, "Dosis minimum tidak boleh lebih besar dari maksimum.", "err"); return; }
+      if (p.volume_obat_awal != null && p.total_volume_awal != null && p.volume_obat_awal > p.total_volume_awal) { showMsg(msg, "Volume obat awal tidak boleh melebihi total volume.", "err"); return; }
+      sv.disabled = true;
+      const q = r.id ? db.from("obat_infus").update(p).eq("id", r.id) : db.from("obat_infus").insert(Object.assign({ obat_id: editId }, p));
+      const { error } = await q;
+      sv.disabled = false;
+      if (error) { showMsg(msg, "Rumus belum tersimpan. Coba lagi.", "err"); return; }
+      await afterInfusChange("Rumus tersimpan.");
+    });
+    dl.addEventListener("click", async function () {
+      if (!r.id) { card.remove(); return; }
+      if (!confirm("Hapus rumus ini dari obat?")) return;
+      const { error } = await db.from("obat_infus").delete().eq("id", r.id);
+      if (error) { showMsg(msg, "Rumus belum terhapus. Coba lagi.", "err"); return; }
+      await afterInfusChange("Rumus dihapus.");
+    });
+    return card;
+  }
 
   /* ---------- Mulai ---------- */
   db.auth.getSession().then(function (res) { route(res.data.session); });
