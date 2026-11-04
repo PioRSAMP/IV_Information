@@ -126,6 +126,15 @@
 
   h1, h2, .brand b, .result strong { font-family: "Sora", system-ui, sans-serif; }
   .chips { margin: 14px 0 0; }
+  .infus { max-width: 720px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tab { padding: 10px 16px; font: inherit; font-size: .9rem; font-weight: 500; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+  .tab[aria-selected="true"] { color: #fff; background: var(--aqua); border-color: var(--aqua); }
+  .step-t { margin: 18px 0 8px; font-weight: 600; }
+  .step-t:first-child { margin-top: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .alert { margin-top: 10px; padding: 10px 12px; font-size: .9rem; color: #8c1f1f; background: #fde8e8; border: 1px solid #e8a5a5; border-radius: 10px; }
+  @media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
   .chip { display: inline-block; padding: 4px 12px; font-size: .85rem; font-weight: 500; color: var(--aqua); background: #eaf3df; border-radius: 999px; }
   .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 22px 0 0; }
   .key { display: flex; flex-direction: column-reverse; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--aqua); border-radius: 14px; box-shadow: 0 1px 2px rgba(20,48,59,.06); }
@@ -203,7 +212,9 @@
   }
 
   async function load() {
-    const { data, error } = await db.from("obat").select("*").eq("status", "terverifikasi").order("nama_obat", { ascending: true }).limit(1000);
+    const base = function (cols) { return db.from("obat").select(cols).eq("status", "terverifikasi").order("nama_obat", { ascending: true }).limit(1000); };
+    let { data, error } = await base("*, obat_infus(*, rumus_infus(*))");
+    if (error) ({ data, error } = await base("*"));
     if (error) { $("status").textContent = "Data tidak dapat dimuat. Periksa koneksi internet."; showEmpty(); return; }
     all = data;
     renderNav();
@@ -311,6 +322,7 @@
       work.append(right);
     }
     d.append(work);
+    renderInfusCalc(d, r);
     if (r.stabilitas) {
       d.append(el("h2", "sec", "Stabilitas"), el("div", "box", r.stabilitas));
     }
@@ -360,6 +372,127 @@
     input.addEventListener("input", update);
     update();
     d.append(box);
+  }
+
+  const FACT = { ng: 0.001, mcg: 1, mg: 1000, g: 1000000, unit: 1 };
+  function parseNum(input) {
+    const raw = input.value.trim().replace(",", ".");
+    if (!raw) return { empty: true };
+    if (!/^(\d+\.?\d*|\.\d+)$/.test(raw)) return { bad: true };
+    return { v: Number(raw) };
+  }
+  function tplLabel(t) { return t.satuan_dosis + (t.per_kgbb ? "/kgBB" : "") + "/" + t.per_waktu; }
+
+  function renderInfusCalc(d, r) {
+    const list = (r.obat_infus || []).filter(function (x) { return x.rumus_infus; })
+      .sort(function (a, b) { return a.id - b.id; });
+    const C = Number(r.konsentrasi_per_ml);
+    if (!list.length || !(C > 0)) return;
+    const unitS = String(r.satuan_dosis || "mg").toLowerCase();
+    d.append(el("h2", "sec", "Kalkulator infus kontinu"));
+    const wrap = el("div", "infus");
+    const tabs = el("div", "tabs");
+    tabs.setAttribute("role", "tablist");
+    const card = el("div", "calc");
+    wrap.append(tabs, card);
+    d.append(wrap);
+    let active = 0;
+    const keep = { vo: list[0].volume_obat_awal, tv: list[0].total_volume_awal, dose: "", bb: "" };
+
+    function build() {
+      const row = list[active], t = row.rumus_infus;
+      tabs.replaceChildren();
+      if (list.length > 1) {
+        list.forEach(function (x, i) {
+          const b = el("button", "tab", tplLabel(x.rumus_infus) + (x.catatan ? " (" + x.catatan + ")" : ""));
+          b.type = "button";
+          b.setAttribute("role", "tab");
+          b.setAttribute("aria-selected", String(i === active));
+          b.addEventListener("click", function () { active = i; build(); });
+          tabs.append(b);
+        });
+      }
+      card.replaceChildren();
+
+      function field(label, key, ph) {
+        const l = el("label", null, label);
+        const i = el("input");
+        i.type = "text"; i.inputMode = "decimal"; i.autocomplete = "off"; i.placeholder = ph;
+        i.value = keep[key] == null ? "" : String(keep[key]);
+        i.addEventListener("input", function () { keep[key] = i.value; update(); });
+        l.append(i);
+        return { l: l, i: i };
+      }
+
+      card.append(el("p", "step-t", "1. Penyiapan larutan"));
+      const vo = field("Volume obat (mL)", "vo", "mis. 5");
+      const tv = field("Total volume larutan (mL)", "tv", "mis. 50");
+      const g1 = el("div", "two");
+      g1.append(vo.l, tv.l);
+      card.append(g1);
+      const concOut = el("p", "calc-conc");
+      card.append(concOut);
+
+      card.append(el("p", "step-t", "2. Kecepatan pompa"));
+      const dose = field("Dosis (" + tplLabel(t) + ")", "dose", "mis. 5");
+      const g2 = el("div", "two");
+      g2.append(dose.l);
+      let bb = null;
+      if (t.per_kgbb) { bb = field("Berat badan (kg)", "bb", "mis. 60"); g2.append(bb.l); }
+      card.append(g2);
+      const out = el("div", "result");
+      out.setAttribute("role", "status");
+      card.append(out);
+      card.append(el("p", "calc-note", "Isian awal volume diambil dari data obat dan bisa diubah sesuai larutan yang disiapkan. Hasil adalah alat bantu: periksa ulang dengan protokol rumah sakit dan oleh petugas kedua sebelum dipakai."));
+
+      function update() {
+        concOut.textContent = "";
+        out.replaceChildren();
+        const hint = function (m) { out.append(el("span", "calc-hint", m)); };
+        const bad = function (m) { out.append(el("div", "alert", m)); };
+        const uR = t.satuan_dosis;
+        if (!(uR in FACT) || !(unitS in FACT) || (uR === "unit") !== (unitS === "unit")) {
+          bad("Satuan rumus (" + uR + ") tidak cocok dengan satuan sediaan (" + unitS + "). Hubungi petugas.");
+          return;
+        }
+        const a = parseNum(vo.i), b = parseNum(tv.i);
+        if (a.empty || b.empty) { hint("Isi volume obat dan total volume larutan."); return; }
+        if (a.bad || b.bad || a.v <= 0 || b.v <= 0) { bad("Volume harus berupa angka lebih dari 0."); return; }
+        if (a.v > b.v) { bad("Volume obat tidak boleh melebihi total volume larutan."); return; }
+        const conc = a.v * C / b.v;
+        concOut.textContent = "Konsentrasi larutan: " + fmt(conc, 6) + " " + unitS + "/mL";
+
+        const x = parseNum(dose.i);
+        if (x.empty) { hint("Isi dosis untuk melihat kecepatan pompa."); return; }
+        if (x.bad || x.v <= 0) { bad("Dosis harus berupa angka lebih dari 0."); return; }
+        let w = 1;
+        if (bb) {
+          const y = parseNum(bb.i);
+          if (y.empty) { hint("Isi berat badan."); return; }
+          if (y.bad || y.v < 0.5 || y.v > 300) { bad("Berat badan harus antara 0,5 dan 300 kg."); return; }
+          w = y.v;
+        }
+        const perHour = x.v * w * (t.per_waktu === "menit" ? 60 : 1);
+        const conv = perHour * FACT[uR] / FACT[unitS];
+        const rate = conv / conc;
+        out.append(el("span", "calc-hint", "Kecepatan pompa"), el("strong", null, fmt(rate, 2) + " mL/jam"));
+        out.append(
+          el("span", "calc-hint", fmt(x.v, 4) + " " + tplLabel(t) + (bb ? " × " + fmt(w, 2) + " kg" : "") + (t.per_waktu === "menit" ? " × 60" : "") + " = " + fmt(perHour, 6) + " " + uR + "/jam"),
+          el("span", "calc-hint", fmt(conv, 6) + " " + unitS + "/jam ÷ " + fmt(conc, 6) + " " + unitS + "/mL = " + fmt(rate, 2) + " mL/jam")
+        );
+        const mn = row.dosis_min, mx = row.dosis_maks;
+        if ((mn != null && x.v < Number(mn)) || (mx != null && x.v > Number(mx))) {
+          const range = mn != null && mx != null ? fmt(Number(mn), 4) + " sampai " + fmt(Number(mx), 4)
+            : mn != null ? "minimal " + fmt(Number(mn), 4) : "maksimal " + fmt(Number(mx), 4);
+          bad("Dosis di luar rentang yang tercatat (" + range + " " + tplLabel(t) + "). Periksa kembali.");
+        }
+        if (row.kecepatan_maks != null && rate > Number(row.kecepatan_maks)) {
+          bad("Kecepatan melebihi batas " + fmt(Number(row.kecepatan_maks), 2) + " mL/jam. Periksa kembali.");
+        }
+      }
+      update();
+    }
+    build();
   }
 
   function showFromHash() {
