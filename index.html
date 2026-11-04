@@ -225,6 +225,72 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
+
+  /* Ikon peringatan pada kotak Perhatian */
+  .warn strong { display: flex; align-items: center; gap: 8px; }
+  .warn strong::before {
+    content: ""; flex: none; width: 18px; height: 18px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d98a00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  /* Sorotan kata pencarian dan tombol lompat ke kalkulator */
+  .item mark { padding: 0 2px; margin: 0 -2px; color: inherit; font-weight: 600; background: rgba(240,138,30,.25); border-radius: 3px; }
+  .head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .copy.to-calc { color: #fff; background: var(--brand-orange); border-color: var(--brand-orange); }
+  .copy.to-calc:hover { background: #d97a14; }
+  @media (min-width: 1200px) { .copy.to-calc { display: none; } }
+
+  /* Mode gelap (mengikuti pengaturan perangkat) */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --ink: #e6efe8; --muted: #9db0a2; --line: #2c3a30;
+      --bg: #101712; --surface: #18211b;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+      --shadow-lg: 0 20px 48px rgba(0,0,0,.6);
+      --ring: 0 0 0 3px rgba(138,171,58,.3);
+      --warn-bg: #2b2410; --warn-ink: #f0c978;
+      --ok-bg: #16301f; --ok-ink: #8fd6a7;
+      --danger: #f08a8a; --danger-bg: #3a1b1b;
+    }
+    :focus-visible { outline-color: var(--brand-green-2); }
+    .search:focus { background: var(--surface); border-color: var(--brand-green-2); }
+    .item:hover, .menu-btn:hover { background: #202b23; }
+    .item[aria-current="true"] { background: rgba(138,171,58,.16); border-color: rgba(138,171,58,.4); }
+    .copy { color: #a8d08a; border-color: rgba(138,171,58,.5); }
+    .copy:hover { background: rgba(138,171,58,.12); }
+    .chip { color: #a8d08a; background: rgba(138,171,58,.16); }
+    .warn { background: #2b2410; border-color: #6b5320; color: #f0c978; }
+    .calc { background: #231d12; border-color: #5a4520; }
+    .calc input { background: #1a160d; border-color: #5a4520; color: var(--ink); }
+    .calc input:focus { border-color: #f0a73a; box-shadow: 0 0 0 3px rgba(240,167,58,.22); }
+    .result { background: linear-gradient(180deg, #2a2112, #241c0f); border-color: #5a4520; border-left-color: var(--brand-orange); }
+    .result strong { color: #ffb454; }
+    .tab { background: var(--surface); color: var(--ink); }
+    .tab[aria-selected="true"] { color: #fff; background: var(--brand-green); border-color: var(--brand-green); }
+    .alert { color: #ffb0b0; border-color: #8a3a3a; }
+    .sk-bar { background: linear-gradient(90deg, #1d2820 25%, #26342b 37%, #1d2820 63%); background-size: 400% 100%; }
+    .empty::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 76'%3E%3Ccircle cx='38' cy='38' r='36' fill='%23203024' stroke='%238aab3a' stroke-width='2'/%3E%3Ccircle cx='38' cy='38' r='26' fill='%233d7a2b'/%3E%3Cpath d='M33 22h10v11h11v10H43v11H33V43H22V33h11z' fill='%23fff'/%3E%3C/svg%3E");
+    }
+  }
+
+  /* Cetak: hanya nama obat, langkah, dan stabilitas */
+  @media print {
+    @page { margin: 16mm; }
+    * { box-shadow: none !important; }
+    body { background: #fff; color: #000; font-size: 12pt; }
+    .app { display: block; }
+    .sidebar, .topbar, .copy, .calc-col, .infus, h2.sec:has(+ .infus), .inst, .skeleton { display: none !important; }
+    .main { background: none; }
+    .content { max-width: none; padding: 0; }
+    .work { display: block; }
+    .steps li, .key, .warn, .box { break-inside: avoid; }
+    .steps li::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    h1.name { font-size: 20pt; }
+    footer { padding: 12px 0 0; }
+  }
 </style>
 </head>
 <body>
@@ -316,6 +382,13 @@
     showFromHash();
   }
 
+  // Menyorot kata pencarian pada nama obat
+  function setNama(b, text, q) {
+    const i = q && text.toLowerCase().length === text.length ? text.toLowerCase().indexOf(q) : -1;
+    if (i < 0) { b.textContent = text; return; }
+    b.append(document.createTextNode(text.slice(0, i)), el("mark", null, text.slice(i, i + q.length)), document.createTextNode(text.slice(i + q.length)));
+  }
+
   function renderNav() {
     const q = $("search").value.trim().toLowerCase();
     const list = all.filter(function (r) { return !q || r.nama_obat.toLowerCase().includes(q); });
@@ -334,8 +407,9 @@
         nav.append(ul);
       }
       const li = document.createElement("li");
-      const b = el("button", "item", r.nama_obat);
+      const b = el("button", "item");
       b.type = "button";
+      setNama(b, r.nama_obat, q);
       if (r.bentuk_sediaan) b.append(el("small", null, r.bentuk_sediaan));
       if (r.id === selectedId) b.setAttribute("aria-current", "true");
       b.addEventListener("click", function () { location.hash = String(r.id); });
@@ -380,7 +454,18 @@
         setTimeout(function () { copy.textContent = "Salin langkah"; }, 1500);
       });
     });
-    head.append(copy);
+    const acts = el("div", "head-actions");
+    if (Number(r.konsentrasi_per_ml) > 0) {
+      const go = el("button", "copy to-calc", "Ke kalkulator");
+      go.type = "button";
+      go.addEventListener("click", function () {
+        const target = d.querySelector(".calc-col");
+        if (target) target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+      });
+      acts.append(go);
+    }
+    acts.append(copy);
+    head.append(acts);
     d.append(head);
 
     if (r.pelarut) {
@@ -493,6 +578,7 @@
     const tabs = el("div", "tabs");
     tabs.setAttribute("role", "tablist");
     const card = el("div", "calc");
+    card.setAttribute("role", "tabpanel");
     wrap.append(tabs, card);
     d.append(wrap);
     let active = 0;
@@ -508,7 +594,21 @@
           b.type = "button";
           b.setAttribute("role", "tab");
           b.setAttribute("aria-selected", String(i === active));
+          b.tabIndex = i === active ? 0 : -1;
           b.addEventListener("click", function () { active = i; build(); });
+          b.addEventListener("keydown", function (e) {
+            let n = null;
+            if (e.key === "ArrowRight") n = (i + 1) % list.length;
+            else if (e.key === "ArrowLeft") n = (i - 1 + list.length) % list.length;
+            else if (e.key === "Home") n = 0;
+            else if (e.key === "End") n = list.length - 1;
+            if (n === null) return;
+            e.preventDefault();
+            active = n;
+            build();
+            const t2 = tabs.querySelectorAll('[role="tab"]')[n];
+            if (t2) t2.focus();
+          });
           tabs.append(b);
         });
       }
